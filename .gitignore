@@ -8,6 +8,7 @@ __pycache__/
 *.py[cod]
 *.whl
 *.egg-info
+*.csv
  
 # Distribution / packaging
 .Python

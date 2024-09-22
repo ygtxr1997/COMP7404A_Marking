@@ -114,8 +114,9 @@ if __name__ == "__main__":
     assignment = 'a1'
     max_time = 301  # 1 for debug, 301 for real marking
     submission_dir = make_abs_path(os.path.join(assignment, 'submissions/'))
-    student_score_dict = {}
 
+    # 1. Calculating scores case-by-case
+    student_score_dict = {}
     for student_folder in os.listdir(submission_dir):
         student_path = os.path.join(submission_dir, student_folder)
         if os.path.isdir(student_path):
@@ -165,3 +166,31 @@ if __name__ == "__main__":
             print(student_folder, student_score_dict[student_folder])
 
             sys.path.remove(student_path)
+
+    # 2. Save results into a .csv file
+    import csv
+    save_fn = f'{assignment}_scores.csv'
+    headers = ['student_id', 
+               'p1_vis', 'p1_invis',
+               'p2_vis', 'p2_invis',
+               'p3_vis', 'p3_invis',
+               'p4_vis', 'p4_invis',
+               'p5_vis', 'p5_invis',
+               'p6_vis', 'p6_invis',
+               'p7_vis', 'p7_invis',
+               'assignment'
+               ]
+    csv_rows = []
+    for student_id, scores in student_score_dict.items():
+        one_row = [str(student_id)]
+        for score in scores:
+            if isinstance(score, tuple):
+                one_row.append(f'{score[0]:.2f}')  # visible score
+                one_row.append(f'{score[1]:.2f}')  # invisible score
+            else:
+                one_row.append(f'{score:.2f}')  # averaged score of assignment
+        csv_rows.append(one_row)
+    with open(save_fn, 'w', newline='', encoding='utf-8') as f:
+        f_csv = csv.writer(f)
+        f_csv.writerow(headers)
+        f_csv.writerows(csv_rows)
