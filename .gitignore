@@ -1,6 +1,6 @@
 # Project
 a*/*.py
-a*/test_cases/p*
+a*/test_cases/p*/
 a*/submissions/*/*.py
 
 # Byte-compiled / optimized / DLL files

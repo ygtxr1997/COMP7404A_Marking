@@ -37,6 +37,6 @@ COMP7404A_Marking/
 
 ## TODO
 
-[ ] Add auto-unzip script
+- [ ] Add auto-unzip script
 
-[ ] Add auto-grader for a2
+- [ ] Add auto-grader for a2
