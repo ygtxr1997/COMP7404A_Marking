@@ -375,6 +375,7 @@ if __name__ == "__main__":
         help='Where you place your "a1/submissions/" and "a1/eval_env/", ')
     args.add_argument('-a', '--assignment', type=str, default='a1')
     args.add_argument('--debug', action='store_true')
+    args = args.parse_args()
     root = args.root
     assignment = args.assignment
     if args.debug:
