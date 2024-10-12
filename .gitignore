@@ -1,7 +1,11 @@
 # Project
-a*/*.py
+a*/p*.py
+a*/grader.py
 a*/test_cases/p*/
 a*/submissions/*/*.py
+a*/submissions/*_file/
+a*/submissions/standard_unzip/
+emails.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
