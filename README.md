@@ -19,13 +19,16 @@ git pull  # or `git update`
 ```
 
 2. Enter the dir and copy your code to submissions directory.
+Our scripts support for placing submitted code and GitHub repo into 
+different directories. But for simplicty, you can put them into the
+same folder.
 Assuming your `p*.py` files are placed at *YOUR_OWN_NAME/* directory.
 Then you can:
 ```shell
 cd COMP7404A_Marking/
 cd a1/  # or others assignment
 mkdir submissions  # create a folder to include your all files
-cp YOUR_OWN_NAME/ submissions/  # e.g tom_jerry_12241235
+cp -r YOUR_OWN_NAME/ submissions/  # e.g `tom_jerry_12241235/`
 ```
 
 3. Add your own testing cases:
@@ -38,7 +41,7 @@ For each problem, you should put these `10*.prob` and `10*.sol` files into `a1/t
 
 After the above steps, the directory tree should be like this:
 ```shell
-COMP7404A_Marking/  # under YOUR_ROOT/ folder
+YOUR_ROOT/COMP7404A_Marking/  # this repo is under YOUR_ROOT/ folder
     |---a1/
         |---submissions/
             |---YOUR_OWN_NAME/  # any customized name is OK
@@ -50,6 +53,8 @@ COMP7404A_Marking/  # under YOUR_ROOT/ folder
                 |---*.sol
                 |---10*.prob  # invisible testing cases definied by yourself
                 |---10*.sol  # solutions defined by yourself
+    |---grader.py  # just for avoiding importing error
+    |---grader_ta_a1.py  # marking for assignment 1
 ```
 
 4. Start evaluation:
@@ -74,7 +79,7 @@ The directory tree of this repo is shown below:
 
 ```shell
 # This is our GitHub repo
-COMP7404A_Marking/
+YOUR_ROOT/COMP7404A_Marking/
     |---a*/  # assignment id
         |---test_cases/  # testing cases
             |---p*/  # each problem has visible and invisible cases
@@ -86,7 +91,7 @@ COMP7404A_Marking/
     |---grader_ta_a1.py  # marking for assignment 1
 
 # This is where you place your code
-YOUR_OWN_ROOT/
+WHERE_YOU_COPY_SUBMISSIONS_TO/  # can equal to: YOUR_ROOT/COMP7404A_Marking/
     |---a*/  # assignment id
         |---submissions/  # students' submissions are placed here
                 |---student_id1/  # each student is a folder
