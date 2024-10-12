@@ -7,10 +7,15 @@ This repository includes the scripts of marking scores of the assignments of COM
 
 If you'd like to test your code using our auto grading script, you can follow these steps (assuming your chosen directory is *YOUR_ROOT/*):
 
-1. Git clone:
+1. If you haven't cloned this repo, run `git clone`:
 ```shell
-cd YOUR_ROOT
+cd YOUR_ROOT/
 git clone https://github.com/ygtxr1997/COMP7404A_Marking.git
+```
+If you have already cloned this repo before, run `git pull` or `git update`:
+```shell
+cd YOUR_ROOT/
+git pull  # or `git update`
 ```
 
 2. Enter the dir and copy your code to submissions directory.
