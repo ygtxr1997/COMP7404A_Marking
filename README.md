@@ -27,6 +27,19 @@ cd a1/  # or others assignment
 mkdir submissions  # create a folder to include your all files
 cp YOUR_OWN_NAME/ submissions/  # e.g tom_jerry_12241235
 ```
+The directory tree should be like this:
+```shell
+COMP7404A_Marking/
+    |---a1/
+        |---submissions/
+            |---YOUR_OWN_NAME/
+                |---p*.py
+                |---parse.py
+        |---test_cases/
+            |---p*/
+                |---*.prob
+                |---*.sol
+```
 
 3. Start evaluation:
 ```shell
