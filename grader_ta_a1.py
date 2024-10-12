@@ -310,18 +310,22 @@ def make_abs_path(relative_path):
 
 def read_emails(fn='emails.csv'):
     import csv
-    with open(fn, 'r', newline='', encoding='utf-8') as f:
-        f_csv = csv.reader(f, delimiter='\t')
-        csv_content = [row for row in f_csv]
-    email_dict = {}
-    for row in csv_content:
-        grouping, group, first_name, last_name, email_addr = row
-        email_dict[f'{last_name} {first_name}'] = {
-            'first_name': first_name,
-            'last_name': last_name,
-            'group': group,
-            'email': email_addr,
-        }
+    try:
+        with open(fn, 'r', newline='', encoding='utf-8') as f:
+            f_csv = csv.reader(f, delimiter='\t')
+            csv_content = [row for row in f_csv]
+        email_dict = {}
+        for row in csv_content:
+            grouping, group, first_name, last_name, email_addr = row
+            email_dict[f'{last_name} {first_name}'] = {
+                'first_name': first_name,
+                'last_name': last_name,
+                'group': group,
+                'email': email_addr,
+            }
+    except Exception as e:
+        print('[Warning] emails.csv not found, using empty meta info.')
+        email_dict = {}
     return email_dict
 
 
@@ -350,6 +354,13 @@ def save_scores_as_csv(assignment, student_score_dict):
     csv_rows = []
     for student_id, scores in student_score_dict.items():
         student_full_name = student_id.split('_')[0]
+        if email_dict.get(student_full_name) is None:
+            email_dict[student_full_name] = {
+                'first_name': 'None',
+                'last_name': 'None',
+                'group': 'None',
+                'email': 'None',
+            }
         one_row = [str(student_id), 
             str(email_dict[student_full_name]['first_name']),
             str(email_dict[student_full_name]['last_name']),
