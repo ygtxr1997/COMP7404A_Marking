@@ -39,6 +39,8 @@ Since we have some **invisible testing cases** that are invisible for you, you n
 ```
 For each problem, you should put these `10*.prob` and `10*.sol` files into `a1/test_cases/p*` directory.
 
+Note: Do not use `gen_test_cases.py` to generate `10*.prob` and `10*.sol` files. You should **manually** edit them by typing the problems and solutions.
+
 After the above steps, the directory tree should be like this:
 ```shell
 YOUR_ROOT/COMP7404A_Marking/  # this repo is under YOUR_ROOT/ folder
