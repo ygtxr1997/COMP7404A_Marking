@@ -14,7 +14,7 @@ git clone https://github.com/ygtxr1997/COMP7404A_Marking.git
 ```
 If you have already cloned this repo before, run `git pull` or `git update`:
 ```shell
-cd YOUR_ROOT/
+cd YOUR_ROOT/COMP7404A_Marking/
 git pull  # or `git update`
 ```
 
