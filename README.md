@@ -27,21 +27,32 @@ cd a1/  # or others assignment
 mkdir submissions  # create a folder to include your all files
 cp YOUR_OWN_NAME/ submissions/  # e.g tom_jerry_12241235
 ```
-The directory tree should be like this:
+
+3. Add your own testing cases:
+
+Since we have some **invisible testing cases** that are invisible for you, you need to add these cases by yourself. Each problem has 3 invisible cases with the same name patterns:
 ```shell
-COMP7404A_Marking/
+101.prob, 101.sol, 102.prob, 102.sol, 103.prob, 103.sol
+```
+For each problem, you should put these `10*.prob` and `10*.sol` files into `a1/test_cases/p*` directory.
+
+After the above steps, the directory tree should be like this:
+```shell
+COMP7404A_Marking/  # under YOUR_ROOT/ folder
     |---a1/
         |---submissions/
-            |---YOUR_OWN_NAME/
+            |---YOUR_OWN_NAME/  # any customized name is OK
                 |---p*.py
                 |---parse.py
         |---test_cases/
             |---p*/
                 |---*.prob
                 |---*.sol
+                |---10*.prob  # invisible testing cases definied by yourself
+                |---10*.sol  # solutions defined by yourself
 ```
 
-3. Start evaluation:
+4. Start evaluation:
 ```shell
 python grader_ta_a1.py -r YOUR_ROOT -a a1
 ```
