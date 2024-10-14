@@ -1,6 +1,7 @@
 #Do not make changes to this file
 import os, difflib, sys
 import time, argparse, threading, importlib, multiprocessing, shutil
+from typing import List, Dict
 
 
 class SuprressPrint(object):  # shut down printing
@@ -45,6 +46,7 @@ def grade(problem_id, test_case_id, student_code_problem, student_code_parse,
         num_invisible_cases: int = 3,
         timeout_limit: float = 5 * 60 + 1,  # max running time for each testing case is 5 min
         sup_printer: SuprressPrint = None,
+        is_resubmit: bool = False,
         ):
     if verbose:
         print('Grading Problem', problem_id,':')
@@ -61,7 +63,7 @@ def grade(problem_id, test_case_id, student_code_problem, student_code_parse,
             test_case_fn = i
             is_ok = check_test_case(problem_id, test_case_fn, student_code_problem, student_code_parse,
                 assignment_id=assignment_id, timeout_limit=timeout_limit,
-                verbose=verbose, sup_printer=sup_printer,
+                verbose=verbose, sup_printer=sup_printer, is_resubmit=is_resubmit,
             )
             if is_ok:  # Passed!
                 passed_visible_cases.append(i)
@@ -73,7 +75,7 @@ def grade(problem_id, test_case_id, student_code_problem, student_code_parse,
             test_case_fn = i + invis_idx
             is_ok = check_test_case(problem_id, test_case_fn, student_code_problem, student_code_parse,
                 assignment_id=assignment_id, timeout_limit=timeout_limit,
-                verbose=verbose, sup_printer=sup_printer,
+                verbose=verbose, sup_printer=sup_printer, is_resubmit=is_resubmit,
             )
             if is_ok:  # Passed!
                 passed_invisible_cases.append(i)
@@ -91,6 +93,7 @@ def check_test_case(problem_id, test_case_id, student_code_problem, student_code
         verbose: bool = False,
         timeout_limit: float = 5 * 60 + 1,
         sup_printer: SuprressPrint = None,
+        is_resubmit: bool = False,
         ) -> bool:
     file_name_problem = str(test_case_id)+'.prob' 
     file_name_sol = str(test_case_id)+'.sol'
@@ -107,7 +110,7 @@ def check_test_case(problem_id, test_case_id, student_code_problem, student_code
             raise other_error[0](other_error[1])
     except Exception as e:  # handle error here
         sup_printer.open()
-        print(f'{sup_printer.student_folder}: Found ERROR: ({e}). '
+        print(f'{sup_printer.student_folder} (resubmit={is_resubmit}): Found ERROR: ({e}). '
               f'Giving zero score for problem={problem_id}, '
               f'test_case={test_case_id}.')
         sup_printer.close()
@@ -124,7 +127,7 @@ def check_test_case(problem_id, test_case_id, student_code_problem, student_code
             raise other_error[0](other_error[1])
     except Exception as e:  # handle error here
         sup_printer.open()
-        print(f'{sup_printer.student_folder}: Found ERROR: ({e}). '
+        print(f'{sup_printer.student_folder} (resubmit={is_resubmit}): Found ERROR: ({e}). '
               f'Giving zero score for problem={problem_id}, '
               f'test_case={test_case_id}.')
         sup_printer.close()
@@ -153,15 +156,15 @@ def check_test_case(problem_id, test_case_id, student_code_problem, student_code
         return False
 
 
-def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='a1/eval_env'):
+def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='a1/eval_env',
+        is_resubmit: bool = False, is_supress_all: bool = False
+        ):
     student_folder = os.path.basename(student_path)
-    # sys.path.append(student_path)
-    # if 'a1' in sys.path:
-    #     sys.path.remove('a1')
-    # import parse, p1, p2, p3, p4, p5, p6, p7
 
-    enable_suppress = True
-    sup_printer = SuprressPrint(student_folder, enable_suppress)
+    sup_all_printer = SuprressPrint('', is_supress_all)
+    sup_printer = SuprressPrint(student_folder, True)
+
+    sup_all_printer.close()
 
     # Copy students' files into eval_env
     eval_dir = os.path.join(root, eval_dir)
@@ -186,14 +189,14 @@ def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
     except Exception as e:
         print(f'{student_folder}: {e}, giving zero for the assignment 1')
     
-    student_score_dict[student_folder] = []
+    cur_scores: List = []
 
     try:
         sup_printer.close()
         import p1
         importlib.reload(p1)
         s1, s2 = grade(1, -5, p1.dfs_search, parse.read_graph_search_problem, 
-            timeout_limit=max_time, sup_printer=sup_printer)
+            timeout_limit=max_time, sup_printer=sup_printer, is_resubmit=is_resubmit)
         e = None
     except Exception as error:
         e = error
@@ -201,106 +204,122 @@ def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
     finally:
         sup_printer.open()
         if e is not None:
-            print(f'{student_folder}: {e}, giving zero for the problem 1')
-    student_score_dict[student_folder].append((s1, s2))
+            print(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 1')
+    cur_scores.append((s1, s2))
 
     try:
         sup_printer.close()
         import p2
         importlib.reload(p2)
         s1, s2 = grade(2, -5, p2.bfs_search, parse.read_graph_search_problem, 
-            timeout_limit=max_time, sup_printer=sup_printer)
+            timeout_limit=max_time, sup_printer=sup_printer, is_resubmit=is_resubmit)
     except Exception as error:
         e = error
         s1, s2 = 0., 0.
     finally:
         sup_printer.open()
         if e is not None:
-            print(f'{student_folder}: {e}, giving zero for the problem 2')
-    student_score_dict[student_folder].append((s1, s2))
+            print(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 2')
+    cur_scores.append((s1, s2))
 
     try:
         sup_printer.close()
         import p3
         importlib.reload(p3)
         s1, s2 = grade(3, -6, p3.ucs_search, parse.read_graph_search_problem, 
-            timeout_limit=max_time, sup_printer=sup_printer)
+            timeout_limit=max_time, sup_printer=sup_printer, is_resubmit=is_resubmit)
     except Exception as error:
         e = error
         s1, s2 = 0., 0.
     finally:
         sup_printer.open()
         if e is not None:
-            print(f'{student_folder}: {e}, giving zero for the problem 3')
-    student_score_dict[student_folder].append((s1, s2))
+            print(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 3')
+    cur_scores.append((s1, s2))
 
     try:
         sup_printer.close()
         import p4
         importlib.reload(p4)
         s1, s2 = grade(4, -6, p4.greedy_search, parse.read_graph_search_problem, 
-            timeout_limit=max_time, sup_printer=sup_printer)
+            timeout_limit=max_time, sup_printer=sup_printer, is_resubmit=is_resubmit)
     except Exception as error:
         e = error
         s1, s2 = 0., 0.
     finally:
         sup_printer.open()
         if e is not None:
-            print(f'{student_folder}: {e}, giving zero for the problem 4')
-    student_score_dict[student_folder].append((s1, s2))
+            print(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 4')
+    cur_scores.append((s1, s2))
 
     try:
         sup_printer.close()
         import p5
         importlib.reload(p5)
         s1, s2 = grade(5, -6, p5.astar_search, parse.read_graph_search_problem, 
-            timeout_limit=max_time, sup_printer=sup_printer)
+            timeout_limit=max_time, sup_printer=sup_printer, is_resubmit=is_resubmit)
     except Exception as error:
         e = error
         s1, s2 = 0., 0.
     finally:
         sup_printer.open()
         if e is not None:
-            print(f'{student_folder}: {e}, giving zero for the problem 5')
-    student_score_dict[student_folder].append((s1, s2))
+            print(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 5')
+    cur_scores.append((s1, s2))
 
     try:
         sup_printer.close()
         import p6
         importlib.reload(p6)
         s1, s2 = grade(6, -4, p6.number_of_attacks, parse.read_8queens_search_problem, 
-            timeout_limit=max_time, sup_printer=sup_printer)
+            timeout_limit=max_time, sup_printer=sup_printer, is_resubmit=is_resubmit)
     except Exception as error:
         e = error
         s1, s2 = 0., 0.
     finally:
         sup_printer.open()
         if e is not None:
-            print(f'{student_folder}: {e}, giving zero for the problem 6')
-    student_score_dict[student_folder].append((s1, s2))
+            print(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 6')
+    cur_scores.append((s1, s2))
 
     try:
         sup_printer.close()
         import p7
         importlib.reload(p7)
         s1, s2 = grade(7, -6, p7.better_board, parse.read_8queens_search_problem, 
-            timeout_limit=max_time, sup_printer=sup_printer)
+            timeout_limit=max_time, sup_printer=sup_printer, is_resubmit=is_resubmit)
     except Exception as error:
         e = error
         s1, s2 = 0., 0.
     finally:
         sup_printer.open()
         if e is not None:
-            print(f'{student_folder}: {e}, giving zero for the problem 7')
-    student_score_dict[student_folder].append((s1, s2))
+            print(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 7')
+    cur_scores.append((s1, s2))
 
-    assignment_score = calc_assignment_score(student_score_dict[student_folder])
-    student_score_dict[student_folder].append(assignment_score)
-    # print(student_folder, student_score_dict[student_folder])
+    assignment_score = calc_assignment_score(cur_scores)
+    cur_scores.append(assignment_score)
+    # print(student_folder, cur_scores)
+
+    if is_resubmit:
+        # 1. Resubmission, use Dict to store scores
+        student_score_dict[student_folder] = {
+            'resubmit': cur_scores,  # [(s1,s2),...,s_avg], resubmitted
+        }
+    else:
+        # 2. First submission
+        cached_resubmit_score = None
+        if student_score_dict.get(student_folder) is not None:
+            cached_resubmit_score = student_score_dict[student_folder].get('resubmit')
+        student_score_dict[student_folder] = {
+            'first': cur_scores,  # [(s1,s2),...,s_avg]
+            'resubmit': cached_resubmit_score,  # unchanged or None
+        }
+
+    sup_all_printer.open()
 
     shutil.rmtree(eval_dir)
     os.makedirs(eval_dir, exist_ok=True)
-    # exit()
     return
 
 
@@ -329,6 +348,22 @@ def read_emails(fn='emails.csv'):
     return email_dict
 
 
+def read_discount(fn='a1_discount.csv'):
+    import csv
+    try:
+        with open(fn, 'r', newline='', encoding='utf-8') as f:
+            f_csv = csv.reader(f, delimiter=',')
+            csv_content = [row for row in f_csv]
+        discount_dict = {}
+        for row in csv_content:
+            student_folder, ratio = row
+            discount_dict[student_folder] = float(ratio)
+    except Exception as e:
+        print('[Warning] discount.csv not found, using default discounting ratio.')
+        discount_dict = {}
+    return discount_dict
+
+
 def calc_assignment_score(problem_scores: list):
     num_problems = len(problem_scores)
     sum_score = 0.
@@ -349,9 +384,12 @@ def save_scores_as_csv(assignment, student_score_dict):
                'p5_vis', 'p5_invis',
                'p6_vis', 'p6_invis',
                'p7_vis', 'p7_invis',
-               'assignment'
+               'latest_score',
+               'before_resubmit',
+               'final_score',
                ]
     csv_rows = []
+    discount_dict = read_discount() # set discounting ratio for different students
     for student_id, scores in student_score_dict.items():
         student_full_name = student_id.split('_')[0]
         if email_dict.get(student_full_name) is None:
@@ -367,12 +405,31 @@ def save_scores_as_csv(assignment, student_score_dict):
             str(email_dict[student_full_name]['group']),
             str(email_dict[student_full_name]['email']),
         ]
-        for score in scores:
-            if isinstance(score, tuple):
-                one_row.append(f'{score[0]:.2f}')  # visible score
-                one_row.append(f'{score[1]:.2f}')  # invisible score
-            else:
-                one_row.append(f'{score:.2f}')  # averaged score of assignment
+        first_score: List = scores['first']
+        resubmit_score: List = scores['resubmit']
+        if resubmit_score is None:
+            # without resubmission
+            for score in first_score:
+                if isinstance(score, tuple):
+                    one_row.append(f'{score[0]:.2f}')  # visible score
+                    one_row.append(f'{score[1]:.2f}')  # invisible score
+                else:
+                    one_row.append(f'{score:.2f}')  # averaged score of assignment
+            one_row.extend(['', f'{first_score[-1]:.2f}'])  # [last_avg, final_avg]
+        else:
+            # resubmission detected
+            first_avg, resubmit_avg = first_score[-1], resubmit_score[-1]
+            higher_score = resubmit_score if first_avg < resubmit_avg else first_score
+            discount_ratio = discount_dict.get(student_id, 0.9)
+            final_avg = max(first_avg, first_avg + (resubmit_avg - first_avg) * discount_ratio)
+            for score in higher_score:  # higher one
+                if isinstance(score, tuple):
+                    one_row.append(f'{score[0]:.2f}')  # visible score
+                    one_row.append(f'{score[1]:.2f}')  # invisible score
+                else:
+                    one_row.append(f'{score:.2f}')  # averaged score of assignment
+            one_row.extend([f'{first_score[-1]:.2f}', f'{final_avg:.2f}'])  # [last_avg, final_avg]
+
         csv_rows.append(one_row)
     with open(save_fn, 'w', newline='', encoding='utf-8') as f:
         f_csv = csv.writer(f)
@@ -385,6 +442,8 @@ if __name__ == "__main__":
     args.add_argument('-r', '--root', type=str, default='D:/Documents/HKU/COMP7404_Marking/',
         help='Where you place your "a1/submissions/" and "a1/eval_env/", ')
     args.add_argument('-a', '--assignment', type=str, default='a1')
+    args.add_argument('--load_resubmit', action='store_true',
+        help='Whether check resubmitted files.')
     args.add_argument('--debug', action='store_true')
     args = args.parse_args()
     root = args.root
@@ -395,6 +454,7 @@ if __name__ == "__main__":
         max_time = 301
     skip_students = ['error_student3', 'example_student1', 'example_student2']
     submission_dir = make_abs_path(os.path.join(root, assignment, 'submissions/'))
+    resubmission_dir = make_abs_path(os.path.join(root, assignment, 'resubmit_after_ddl/'))
 
     # 1. Calculating scores case-by-case
     student_score_dict = {}
@@ -403,9 +463,19 @@ if __name__ == "__main__":
     for idx, student_folder in enumerate(submission_fns):
         if student_folder in skip_students:
             continue
+        # a. Second submission, read resubmitted files first to avoid re-printing errors
+        has_resubmitted = False
+        if args.load_resubmit:
+            student_path = os.path.join(resubmission_dir, student_folder)
+            if os.path.exists(student_path):
+                has_resubmitted = True
+                a1_runtime_test(root, student_path, student_score_dict, max_time,
+                    is_resubmit=True)
+        # b. First submission
         student_path = os.path.join(submission_dir, student_folder)
         if os.path.isdir(student_path):
-            a1_runtime_test(root, student_path, student_score_dict, max_time)
+            a1_runtime_test(root, student_path, student_score_dict, max_time,
+                is_supress_all=has_resubmitted)
 
     # 2. Save results into a .csv file
     save_scores_as_csv(

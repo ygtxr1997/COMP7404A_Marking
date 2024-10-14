@@ -108,6 +108,8 @@ WHERE_YOU_COPY_SUBMISSIONS_TO/  # can equal to: YOUR_ROOT/COMP7404A_Marking/
 
 ## Update Log
 
+**2024/10/12:** update `grader_ta_a1.py` to calculate both first submission and resubmission's scores
+
 **2024/10/12:** update `grader_ta_a1.py` to handle more unexpected errors; 
 add `preprocess_submissions.py` to unzip submitted files; add `a1/gen_test_cases.py` to generate solutions for invisible testing cases.
 

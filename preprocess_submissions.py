@@ -97,11 +97,13 @@ if __name__ == "__main__":
     unzip_dir = unzip_file(meta_data['downloads'], verbose=True)
     copy_to_standard_dir(unzip_dir, meta_data['naive_unzip'], meta_data['standard_unzip'])
 
+    # Copy to submissions/ folder
     shutil.copytree(
         meta_data['standard_unzip'], 
         meta_data['submissions'],
         dirs_exist_ok=True
     )
 
-    # Use resubmitted files to cover moodle files
-    copy_resubmit_to_submissions(meta_data['resubmit'], meta_data['submissions'])
+    # Do NOT copy, we now load resubmitted files in grader_ta_a*.py
+    # # Use resubmitted files to cover moodle files
+    # copy_resubmit_to_submissions(meta_data['resubmit'], meta_data['submissions'])
