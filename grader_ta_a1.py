@@ -331,19 +331,20 @@ def read_emails(fn='emails.csv'):
     import csv
     try:
         with open(fn, 'r', newline='', encoding='utf-8') as f:
-            f_csv = csv.reader(f, delimiter='\t')
+            f_csv = csv.reader(f, delimiter=',')
             csv_content = [row for row in f_csv]
         email_dict = {}
-        for row in csv_content:
-            grouping, group, first_name, last_name, email_addr = row
+        for row in csv_content[1:]:  # skip header
+            first_name, last_name, student_number, _, _, email_addr, _, _ = row
             email_dict[f'{last_name} {first_name}'] = {
                 'first_name': first_name,
                 'last_name': last_name,
-                'group': group,
+                'student_number': student_number,
+                'group': 'None',
                 'email': email_addr,
             }
     except Exception as e:
-        print('[Warning] emails.csv not found, using empty meta info.')
+        print(f'[Warning] emails.csv not found, using empty meta info. Error={e}')
         email_dict = {}
     return email_dict
 
@@ -356,8 +357,8 @@ def read_discount(fn='a1_discount.csv'):
             csv_content = [row for row in f_csv]
         discount_dict = {}
         for row in csv_content:
-            student_folder, ratio = row
-            discount_dict[student_folder] = float(ratio)
+            student_folder, ratio, reason = row
+            discount_dict[student_folder] = (float(ratio), str(reason))
     except Exception as e:
         print('[Warning] discount.csv not found, using default discounting ratio.')
         discount_dict = {}
@@ -376,7 +377,7 @@ def save_scores_as_csv(assignment, student_score_dict):
     import csv
     email_dict = read_emails()
     save_fn = f'{assignment}_scores.csv'
-    headers = ['student_id', 'first_name', 'last_name', 'group', 'email',
+    headers = ['student_id', 'first_name', 'last_name', 'student_number', 'group', 'email',
                'p1_vis', 'p1_invis',
                'p2_vis', 'p2_invis',
                'p3_vis', 'p3_invis',
@@ -386,7 +387,9 @@ def save_scores_as_csv(assignment, student_score_dict):
                'p7_vis', 'p7_invis',
                'latest_score',
                'before_resubmit',
+               'discount_reason',
                'final_score',
+               'sum',
                ]
     csv_rows = []
     discount_dict = read_discount() # set discounting ratio for different students
@@ -396,12 +399,14 @@ def save_scores_as_csv(assignment, student_score_dict):
             email_dict[student_full_name] = {
                 'first_name': 'None',
                 'last_name': 'None',
+                'student_number': 'None',
                 'group': 'None',
                 'email': 'None',
             }
         one_row = [str(student_id), 
             str(email_dict[student_full_name]['first_name']),
             str(email_dict[student_full_name]['last_name']),
+            str(email_dict[student_full_name]['student_number']),
             str(email_dict[student_full_name]['group']),
             str(email_dict[student_full_name]['email']),
         ]
@@ -415,12 +420,13 @@ def save_scores_as_csv(assignment, student_score_dict):
                     one_row.append(f'{score[1]:.2f}')  # invisible score
                 else:
                     one_row.append(f'{score:.2f}')  # averaged score of assignment
-            one_row.extend(['', f'{first_score[-1]:.2f}'])  # [last_avg, final_avg]
+            before_resubmit_avg, final_avg = '', first_score[-1]
+            discount_reason = ''
         else:
             # resubmission detected
             first_avg, resubmit_avg = first_score[-1], resubmit_score[-1]
             higher_score = resubmit_score if first_avg < resubmit_avg else first_score
-            discount_ratio = discount_dict.get(student_id, 0.9)
+            discount_ratio, discount_reason = discount_dict.get(student_id, (0.9, 'resubmit'))
             final_avg = max(first_avg, first_avg + (resubmit_avg - first_avg) * discount_ratio)
             for score in higher_score:  # higher one
                 if isinstance(score, tuple):
@@ -428,9 +434,22 @@ def save_scores_as_csv(assignment, student_score_dict):
                     one_row.append(f'{score[1]:.2f}')  # invisible score
                 else:
                     one_row.append(f'{score:.2f}')  # averaged score of assignment
-            one_row.extend([f'{first_score[-1]:.2f}', f'{final_avg:.2f}'])  # [last_avg, final_avg]
+            before_resubmit_avg, final_avg = f'{first_score[-1]:.2f}', final_avg
+        
+        # check plagiarism info
+        if discount_dict.get(student_id) is not None:
+            discount_ratio, discount_reason = discount_dict[student_id]
+            if discount_reason == 'plagiarism':
+                final_avg *= 0.  # give zero
+        one_row.extend([before_resubmit_avg, discount_reason, f'{final_avg:.2f}'])
+
+        # concat all info into a string
+        sum_info = [f'{x}:{y}' for x, y in zip(headers[6:-2], one_row[6:-1])]
+        sum_info = ', '.join(reversed(sum_info))
+        one_row.append(sum_info)
 
         csv_rows.append(one_row)
+
     with open(save_fn, 'w', newline='', encoding='utf-8') as f:
         f_csv = csv.writer(f)
         f_csv.writerow(headers)
@@ -459,6 +478,7 @@ if __name__ == "__main__":
     # 1. Calculating scores case-by-case
     student_score_dict = {}
     submission_fns = os.listdir(submission_dir)
+    submission_fns = [x for x in submission_fns if 'assign' in x]
     submission_fns.sort()
     for idx, student_folder in enumerate(submission_fns):
         if student_folder in skip_students:

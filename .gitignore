@@ -6,6 +6,8 @@ a*/submissions/*/*.py
 a*/submissions/*_file/
 a*/submissions/standard_unzip/
 emails.txt
+.DS_Store
+moss.pl
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
