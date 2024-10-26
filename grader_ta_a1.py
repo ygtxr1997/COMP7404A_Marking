@@ -376,6 +376,7 @@ def calc_assignment_score(problem_scores: list):
 def save_scores_as_csv(assignment, student_score_dict):
     import csv
     email_dict = read_emails()
+    submit_dict = {k : False for k in email_dict.keys()}
     save_fn = f'{assignment}_scores.csv'
     headers = ['student_id', 'first_name', 'last_name', 'student_number', 'group', 'email',
                'p1_vis', 'p1_invis',
@@ -395,6 +396,8 @@ def save_scores_as_csv(assignment, student_score_dict):
     discount_dict = read_discount() # set discounting ratio for different students
     for student_id, scores in student_score_dict.items():
         student_full_name = student_id.split('_')[0]
+        if student_full_name in submit_dict.keys():
+            submit_dict[student_full_name] = True
         if email_dict.get(student_full_name) is None:
             email_dict[student_full_name] = {
                 'first_name': 'None',
@@ -450,6 +453,20 @@ def save_scores_as_csv(assignment, student_score_dict):
 
         csv_rows.append(one_row)
 
+    # append unsubmitted students
+    for student_full_name, is_submitted in submit_dict.items():
+        if not is_submitted:
+            print(f'[Warning] {student_full_name} has not submitted the code.')
+            one_row = [
+                str(f'{student_full_name}_no_submission'), 
+                str(email_dict[student_full_name]['first_name']),
+                str(email_dict[student_full_name]['last_name']),
+                str(email_dict[student_full_name]['student_number']),
+                str(email_dict[student_full_name]['group']),
+                str(email_dict[student_full_name]['email']),
+            ] + ['0.00' for _ in range(7 * 2)] + ['0.00', '', 'not submitted', '0.00', 'not submitted']
+            csv_rows.append(one_row)
+
     with open(save_fn, 'w', newline='', encoding='utf-8') as f:
         f_csv = csv.writer(f)
         f_csv.writerow(headers)
@@ -478,7 +495,7 @@ if __name__ == "__main__":
     # 1. Calculating scores case-by-case
     student_score_dict = {}
     submission_fns = os.listdir(submission_dir)
-    submission_fns = [x for x in submission_fns if 'assign' in x]
+    submission_fns = [x for x in submission_fns if 'assign' in x and 'Yuan_Ge' not in x]
     submission_fns.sort()
     for idx, student_folder in enumerate(submission_fns):
         if student_folder in skip_students:
