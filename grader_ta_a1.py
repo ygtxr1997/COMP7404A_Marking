@@ -123,10 +123,10 @@ class TimeoutHelper(threading.Thread):  # time-limit helper
             signature = inspect.signature(self.fun)
             num_params = len(signature.parameters)
 
-            if num_params == 1 + len(in_args):
-                in_func = functools.partial(self.fun, in_problem)  # No need to unpack
-            else:
+            if isinstance(in_problem, tuple) and num_params != 1 + len(in_args):
                 in_func = functools.partial(self.fun, *in_problem)  # Unpack arguments
+            else:
+                in_func = functools.partial(self.fun, in_problem)  # No need to unpack
 
             if len(in_args) > 0:  # Append other auguments
                 in_func = functools.partial(in_func, *in_args)

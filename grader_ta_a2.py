@@ -605,7 +605,7 @@ if __name__ == "__main__":
     chose_students = []
     if args.chose:
         chose_students = [
-            "AtYuan Ge_assign",
+            "Cao Shuochen_18025314_assignsubmission_file",
         ]
     skip_students = ['error_student3', 'example_student1', 'example_student2']
     submission_dir = make_abs_path(os.path.join(root, assignment, 'submissions/'))
