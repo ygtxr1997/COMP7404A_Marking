@@ -359,7 +359,7 @@ def a2_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
         grade_out = grade(2, -5, p2.better_play_single_ghosts, parse.read_layout_problem, 
             timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit,
             tier_helper=tier_helper)
-        s1, s2, s3 = grade_out['tier3_passed'], grade_out['tier2_passed'], grade_out['tier1_passed']
+        s1, s2, s3 = grade_out['tier1_passed'], grade_out['tier2_passed'], grade_out['tier3_passed']
     except Exception as error:
         e = error
         s1, s2, s3 = 0., 0., 0.
@@ -392,7 +392,7 @@ def a2_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
         grade_out = grade(4, -9, p4.better_play_multiple_ghosts, parse.read_layout_problem, 
             timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit,
             tier_helper=tier_helper)
-        s1, s2, s3 = grade_out['tier3_passed'], grade_out['tier2_passed'], grade_out['tier1_passed']
+        s1, s2, s3 = grade_out['tier1_passed'], grade_out['tier2_passed'], grade_out['tier3_passed']
     except Exception as error:
         e = error
         s1, s2, s3 = 0., 0., 0.
@@ -408,7 +408,7 @@ def a2_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
         grade_out = grade(5, -9, p5.min_max_multiple_ghosts, parse.read_layout_problem, 
             timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit,
             tier_helper=tier_helper)
-        s1, s2, s3 = grade_out['tier3_passed'], grade_out['tier2_passed'], grade_out['tier1_passed']
+        s1, s2, s3 = grade_out['tier1_passed'], grade_out['tier2_passed'], grade_out['tier3_passed']
     except Exception as error:
         e = error
         s1, s2, s3 = 0., 0., 0.
@@ -424,7 +424,7 @@ def a2_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
         grade_out = grade(6, -9, p6.expecti_max_multiple_ghosts, parse.read_layout_problem, 
             timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit,
             tier_helper=tier_helper)
-        s1, s2, s3 = grade_out['tier3_passed'], grade_out['tier2_passed'], grade_out['tier1_passed']
+        s1, s2, s3 = grade_out['tier1_passed'], grade_out['tier2_passed'], grade_out['tier3_passed']
     except Exception as error:
         e = error
         s1, s2, s3 = 0., 0., 0.
