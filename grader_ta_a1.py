@@ -441,7 +441,7 @@ def make_abs_path(relative_path):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), relative_path))
 
 
-def read_emails(fn='emails.csv'):
+def read_emails(fn='emails.csv', logger=None):
     import csv
     try:
         with open(fn, 'r', newline='', encoding='utf-8') as f:
@@ -463,7 +463,7 @@ def read_emails(fn='emails.csv'):
     return email_dict
 
 
-def read_discount(fn='a1/discount.csv'):
+def read_discount(fn='a1/discount.csv', logger=None):
     import csv
     try:
         with open(fn, 'r', newline='', encoding='utf-8') as f:
@@ -496,7 +496,7 @@ def calc_assignment_score(problem_scores: list, max_problem_score_sums: list = N
 # Customized for different assignments
 def save_scores_as_csv(assignment, student_score_dict):
     import csv
-    email_dict = read_emails()
+    email_dict = read_emails(logger=logger)
     submit_dict = {k : False for k in email_dict.keys()}
     save_fn = f'{assignment}_scores.csv'
     headers = ['student_id', 'first_name', 'last_name', 'student_number', 'group', 'email',
@@ -514,7 +514,7 @@ def save_scores_as_csv(assignment, student_score_dict):
                'sum',
                ]
     csv_rows = []
-    discount_dict = read_discount() # set discounting ratio for different students
+    discount_dict = read_discount(logger=logger) # set discounting ratio for different students
     for student_id, scores in student_score_dict.items():
         student_full_name = student_id.split('_')[0]
         if student_full_name in submit_dict.keys():

@@ -461,7 +461,7 @@ def a2_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
     return
 
 
-def read_manual_score(fn='a2/manual.csv'):
+def read_manual_score(fn='a2/manual.csv', logger=None):
     import csv
     try:
         with open(fn, 'r', newline='', encoding='utf-8') as f:
@@ -480,8 +480,8 @@ def read_manual_score(fn='a2/manual.csv'):
 # Customized for different assignments
 def save_scores_as_csv(assignment, student_score_dict):
     import csv
-    email_dict = read_emails()
-    manual_dict = read_manual_score(f'{assignment}/manual.csv')
+    email_dict = read_emails(logger=logger)
+    manual_dict = read_manual_score(f'{assignment}/manual.csv', logger=logger)
     submit_dict = {k : False for k in email_dict.keys()}
     save_fn = f'{assignment}_scores.csv'
     headers = ['student_id', 'first_name', 'last_name', 'student_number', 'group', 'email',
@@ -498,7 +498,7 @@ def save_scores_as_csv(assignment, student_score_dict):
                'feedback',
                ]
     csv_rows = []
-    discount_dict = read_discount(f'{assignment}/discount.csv')  # set discounting ratio for different students
+    discount_dict = read_discount(f'{assignment}/discount.csv', logger=logger)  # set discounting ratio for different students
     for student_id, scores in student_score_dict.items():
         student_full_name = student_id.split('_')[0]
         if student_full_name in submit_dict.keys():
