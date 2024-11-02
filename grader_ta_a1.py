@@ -1,45 +1,157 @@
 #Do not make changes to this file
-import os, difflib, sys
+import os, difflib, sys, copy
 import time, argparse, threading, importlib, multiprocessing, shutil
+import logging
+import functools, inspect
+import builtins, traceback
 from typing import List, Dict
 
 
+def init_logger(log_path: str):
+    logger = logging.getLogger(__name__)
+    console_handler = logging.StreamHandler()
+    file_handler = logging.FileHandler(log_path, mode="a+", encoding="utf-8")
+    formatter = logging.Formatter(
+        "{asctime} - {levelname} - {message}",
+        style="{",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    console_handler.setFormatter(formatter)
+    console_handler.setLevel("DEBUG")
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel("INFO")
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+    logger.setLevel("INFO")
+    return logger
+
+
 class SuprressPrint(object):  # shut down printing
-    def __init__(self, student_folder, enable=True):
+    def __init__(self, student_folder, enable=True, logger=None):
         self.student_folder = student_folder
         self.enable = enable
-    def __enter__(self):
-        self.close()
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.open()
+        self.called_time = 0
+        self.logger = logger
+
+        self.original_print = None
+        self.original_open = None
+
+        self.opened = True
+
     def close(self):
         if not self.enable: return
-        self._original_stdout = sys.stdout
-        sys.stdout = open(os.devnull, 'w')
+        if not self.opened: return
+        self.close_print()
+        self.lock_functions()
+        self.opened = False
+
     def open(self):
         if not self.enable: return
-        sys.stdout.close()
-        sys.stdout = self._original_stdout
+        if self.opened: return
+        self.unlock_functions()
+        self.open_print()
+        self.opened = True
+
+    def close_print(self):  # shut down print
+        self.called_time += 1
+        self.original_print = builtins.print
+        def _block_print(*args, **kwargs):
+            pass
+        builtins.print = _block_print
+
+    def open_print(self):
+        self.called_time += 1
+        builtins.print = self.original_print
+
+    def lock_functions(self):
+        self.original_open = builtins.open
+        def _block_open(*args, **kwargs):
+            mode = None
+            banned_actions = ("w", "w+", "a", "a+")
+    
+            # Check kwargs for 'mode'
+            if 'mode' in kwargs and kwargs['mode'] in banned_actions:
+                mode = kwargs['mode']
+            
+            # Check the second parameter of args (if present)
+            if len(args) > 1 and args[1] in banned_actions:
+                mode = args[1]
+
+            # Check args for a dictionary containing 'mode'
+            for arg in args:
+                if isinstance(arg, dict) and 'mode' in arg and arg['mode'] in banned_actions:
+                    mode = arg['mode']
+                    break
+
+            if mode is not None:
+                raise PermissionError(f"Attempt to call `open(..., mode='{mode})'`.")
+                
+            return self.original_open(*args, **kwargs)
+        builtins.open = _block_open
+
+    def unlock_functions(self):
+        builtins.open = self.original_open
 
 
 class TimeoutHelper(threading.Thread):  # time-limit helper
-    def __init__(self, fun, args):
-        threading.Thread.__init__(self)
+    def __init__(self, logger, fun, problem: any, args: tuple = (), 
+                 num_trials: int = 1,
+                 student_folder: str = "",
+                 ):
+        super(TimeoutHelper, self).__init__()
         self.setDaemon(True)
-        self.result = None
+        self.logger = logger
+        self.result = []
         self.error = None
+        self.line_info = None
         self.fun = fun
+        self.problem = problem
         self.args = args
- 
+        self.num_trials = num_trials
+        self.student_folder = student_folder
+        self.stop_event = threading.Event()  # Create a stop event
+
+        assert isinstance(args, tuple), f'Input args should be wrapped with Tuple, but found: {type(args)} '
         self.start()
 
     def run(self):
-        try:
-            self.result = self.fun(self.args)
-        except:
-            self.error = sys.exc_info()
+        for i in range(self.num_trials):
+            in_problem = copy.deepcopy(self.problem)
+            in_args = copy.deepcopy(self.args)
+
+            # Get the function signature
+            signature = inspect.signature(self.fun)
+            num_params = len(signature.parameters)
+
+            if num_params == 1 + len(in_args):
+                in_func = functools.partial(self.fun, in_problem)  # No need to unpack
+            else:
+                in_func = functools.partial(self.fun, *in_problem)  # Unpack arguments
+
+            if len(in_args) > 0:  # Append other auguments
+                in_func = functools.partial(in_func, *in_args)
+            
+            try:
+                result = in_func()
+            except:
+                self.error = sys.exc_info()
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                for filename, lineno, name, line in traceback.extract_tb(exc_traceback):
+                    self.line_info = f"file={os.path.basename(filename)}, line={lineno}: {line}"
+                in_problem = None
+                del in_problem
+            finally:
+                if self.error is not None:
+                    self.result = [None] * self.num_trials
+                    break
+                else:
+                    self.result.append(result)
+
+    def stop(self):
+        self.stop_event.set()  # Method to set the stop event
 
 
+# Customized for different assignments
 def grade(problem_id, test_case_id, student_code_problem, student_code_parse,
         assignment_id: str = 'a1',
         verbose: bool = False,
@@ -88,6 +200,7 @@ def grade(problem_id, test_case_id, student_code_problem, student_code_parse,
         return visible_score, invisible_score
 
 
+# Customized for different assignments
 def check_test_case(problem_id, test_case_id, student_code_problem, student_code_parse, 
         assignment_id: str = 'a1',
         verbose: bool = False,
@@ -100,34 +213,34 @@ def check_test_case(problem_id, test_case_id, student_code_problem, student_code
     path = os.path.join(assignment_id, 'test_cases','p'+str(problem_id))
 
     try:
-        parse_timeout = TimeoutHelper(student_code_parse, os.path.join(path,file_name_problem))
-        parse_timeout.join(61)
+        parse_timeout = TimeoutHelper(student_code_parse, (os.path.join(path,file_name_problem,)))
+        parse_timeout.join(11)
         if parse_timeout.is_alive():
-            raise TimeoutError("Parsing time exceeding 1 min!")
-        problem = parse_timeout.result
+            raise TimeoutError("Parsing time exceeding 11 seconds!")
+        problem = parse_timeout.result[0]
         if parse_timeout.error is not None:
             other_error = parse_timeout.error
             raise other_error[0](other_error[1])
     except Exception as e:  # handle error here
         sup_printer.open()
-        print(f'{sup_printer.student_folder} (resubmit={is_resubmit}): Found ERROR: ({e}). '
+        logger.error(f'{sup_printer.student_folder} (resubmit={is_resubmit}): Found ERROR: ({e}). '
               f'Giving zero score for problem={problem_id}, '
               f'test_case={test_case_id}.')
         sup_printer.close()
         return False
 
     try:
-        timeout_helper = TimeoutHelper(student_code_problem, problem)
+        timeout_helper = TimeoutHelper(student_code_problem, (problem,))
         timeout_helper.join(timeout_limit)
         if timeout_helper.is_alive():
-            raise TimeoutError("Running time exceeding 5 min!")
-        student_solution = timeout_helper.result
+            raise TimeoutError(f"Running time exceeding {timeout_limit} seconds!")
+        student_solution = timeout_helper.result[0]
         if timeout_helper.error is not None:
             other_error = timeout_helper.error
             raise other_error[0](other_error[1])
     except Exception as e:  # handle error here
         sup_printer.open()
-        print(f'{sup_printer.student_folder} (resubmit={is_resubmit}): Found ERROR: ({e}). '
+        logger.error(f'{sup_printer.student_folder} (resubmit={is_resubmit}): Found ERROR: ({e}). '
               f'Giving zero score for problem={problem_id}, '
               f'test_case={test_case_id}.')
         sup_printer.close()
@@ -156,6 +269,7 @@ def check_test_case(problem_id, test_case_id, student_code_problem, student_code
         return False
 
 
+# Customized for different assignments
 def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='a1/eval_env',
         is_resubmit: bool = False, is_supress_all: bool = False
         ):
@@ -173,13 +287,13 @@ def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
     customized_proj_fns = [s for s in os.listdir(student_path) if '.py' in s and 'grader' not in s]
     customized_proj_fns = list(filter(lambda x: x not in problem_fns, customized_proj_fns))
     if len(customized_proj_fns) > 0:
-        print(f'[Warning] {student_folder} found other .py files: {customized_proj_fns}, need to check.')
+        logger.warning(f'[Warning] {student_folder} found other .py files: {customized_proj_fns}, need to check.')
 
     try:
         for p_fn in problem_fns + customized_proj_fns:
             shutil.copy(os.path.join(student_path, f'{p_fn}'), eval_dir)
     except Exception as e:
-        print(f'{student_folder}: {e}, giving zero for the assignment 1')
+        logger.error(f'{student_folder}: {e}, giving zero for the assignment 1')
 
     sys.path.append(eval_dir)
 
@@ -187,7 +301,7 @@ def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
         import parse
         importlib.reload(parse)
     except Exception as e:
-        print(f'{student_folder}: {e}, giving zero for the assignment 1')
+        logger.error(f'{student_folder}: {e}, giving zero for the assignment 1')
     
     cur_scores: List = []
 
@@ -204,7 +318,7 @@ def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
     finally:
         sup_printer.open()
         if e is not None:
-            print(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 1')
+            logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 1')
     cur_scores.append((s1, s2))
 
     try:
@@ -219,7 +333,7 @@ def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
     finally:
         sup_printer.open()
         if e is not None:
-            print(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 2')
+            logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 2')
     cur_scores.append((s1, s2))
 
     try:
@@ -234,7 +348,7 @@ def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
     finally:
         sup_printer.open()
         if e is not None:
-            print(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 3')
+            logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 3')
     cur_scores.append((s1, s2))
 
     try:
@@ -249,7 +363,7 @@ def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
     finally:
         sup_printer.open()
         if e is not None:
-            print(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 4')
+            logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 4')
     cur_scores.append((s1, s2))
 
     try:
@@ -264,7 +378,7 @@ def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
     finally:
         sup_printer.open()
         if e is not None:
-            print(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 5')
+            logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 5')
     cur_scores.append((s1, s2))
 
     try:
@@ -279,7 +393,7 @@ def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
     finally:
         sup_printer.open()
         if e is not None:
-            print(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 6')
+            logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 6')
     cur_scores.append((s1, s2))
 
     try:
@@ -294,7 +408,7 @@ def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
     finally:
         sup_printer.open()
         if e is not None:
-            print(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 7')
+            logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 7')
     cur_scores.append((s1, s2))
 
     assignment_score = calc_assignment_score(cur_scores)
@@ -344,12 +458,12 @@ def read_emails(fn='emails.csv'):
                 'email': email_addr,
             }
     except Exception as e:
-        print(f'[Warning] emails.csv not found, using empty meta info. Error={e}')
+        logger.warning(f'[Warning] emails.csv not found, using empty meta info. Error={e}')
         email_dict = {}
     return email_dict
 
 
-def read_discount(fn='a1_discount.csv'):
+def read_discount(fn='a1/discount.csv'):
     import csv
     try:
         with open(fn, 'r', newline='', encoding='utf-8') as f:
@@ -360,19 +474,26 @@ def read_discount(fn='a1_discount.csv'):
             student_folder, ratio, reason = row
             discount_dict[student_folder] = (float(ratio), str(reason))
     except Exception as e:
-        print('[Warning] discount.csv not found, using default discounting ratio.')
+        logger.warning('[Warning] discount.csv not found, using default discounting ratio.')
         discount_dict = {}
     return discount_dict
 
 
-def calc_assignment_score(problem_scores: list):
+def calc_assignment_score(problem_scores: list, max_problem_score_sums: list = None):
     num_problems = len(problem_scores)
     sum_score = 0.
-    for score_vis, score_invis in problem_scores:
-        sum_score += score_vis + score_invis
+    for i in range(len(problem_scores)):
+        # Sum should be 100
+        one_problem_score = problem_scores[i]
+        max_problem_score_sum = 100 if max_problem_score_sums is None else max_problem_score_sums[i]
+        problem_score = 0.
+        for score in one_problem_score:
+            problem_score += score
+        sum_score += problem_score * (100 / max_problem_score_sum)
     return sum_score / num_problems
 
 
+# Customized for different assignments
 def save_scores_as_csv(assignment, student_score_dict):
     import csv
     email_dict = read_emails()
@@ -456,7 +577,7 @@ def save_scores_as_csv(assignment, student_score_dict):
     # append unsubmitted students
     for student_full_name, is_submitted in submit_dict.items():
         if not is_submitted:
-            print(f'[Warning] {student_full_name} has not submitted the code.')
+            logger.warning(f'[Warning] {student_full_name} has not submitted the code.')
             one_row = [
                 str(f'{student_full_name}_no_submission'), 
                 str(email_dict[student_full_name]['first_name']),
@@ -482,10 +603,12 @@ if __name__ == "__main__":
         help='Whether check resubmitted files.')
     args.add_argument('--debug', action='store_true')
     args = args.parse_args()
+    logger = init_logger(f"{args.assignment}_output.log")
+
     root = args.root
     assignment = args.assignment
     if args.debug:
-        max_time = 1  # 1 for debug, 301 for real marking
+        max_time = 0.1  # 1 for debug, 301 for real marking
     else:
         max_time = 301
     skip_students = ['error_student3', 'example_student1', 'example_student2']

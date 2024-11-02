@@ -5,7 +5,8 @@ from tqdm import tqdm
 import shutil
 
 
-root = 'D:/Documents/HKU/COMP7404_Marking/'
+# root = 'D:/Documents/HKU/COMP7404_Marking/'
+root = '/Users/greensongavin/Documents/HKU/COMP7404A/'
 meta_info = {
     'a1': {
         'downloads': f'{root}/a1/downloads/COMP7404_1A_2024-Submit a1-3484224.zip',
@@ -13,6 +14,13 @@ meta_info = {
         'standard_unzip': f'{root}/a1/downloads/standard_unzip',
         'submissions': f'{root}/a1/submissions/',
         'resubmit': f'{root}/a1/resubmit_after_ddl/',
+    },
+    'a2': {
+        'downloads': f'{root}/a2/downloads/COMP7404_1A_2024-Submit a2-3486306.zip',
+        'naive_unzip': f'{root}/a2/downloads/naive_unzip',
+        'standard_unzip': f'{root}/a2/downloads/standard_unzip',
+        'submissions': f'{root}/a2/submissions/',
+        'resubmit': f'{root}/a2/resubmit_after_ddl/',
     }
 }
 
@@ -55,11 +63,17 @@ def iterative_find_files(folder, target='p1.py'):
 
 def copy_to_standard_dir(unzip_dir, naive_dir, standard_dir):
     name_id_suffix_folders = os.listdir(unzip_dir)
+    name_id_suffix_folders = [x for x in name_id_suffix_folders if '.DS_Store' not in x]
     for name_id_suffix in tqdm(name_id_suffix_folders):
+        print(name_id_suffix)
         submitted_files = os.listdir(os.path.join(unzip_dir, name_id_suffix))
         if len(submitted_files) > 1: 
             print(f'[Warning] More than one files found in {name_id_suffix}')
-        submitted_zip = submitted_files[0]
+            for submitted_zip in submitted_files:
+                if '.zip' in submitted_zip:
+                    break
+        else:
+            submitted_zip = submitted_files[0]
         extracted_path = unzip_file(
             os.path.join(unzip_dir, name_id_suffix, submitted_zip),
             os.path.join(naive_dir, name_id_suffix),
