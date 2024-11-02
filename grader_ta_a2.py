@@ -614,7 +614,7 @@ if __name__ == "__main__":
     # 1. Calculating scores case-by-case
     student_score_dict = {}
     submission_fns = os.listdir(submission_dir)
-    submission_fns = [x for x in submission_fns if 'assign' in x]
+    submission_fns = [x for x in submission_fns if '.DS' not in x]  # remove .DS_Store on MAC
     # submission_fns = [x for x in submission_fns if 'Yuan Ge' not in x]  # remove TA's data
     if args.chose and len(chose_students) > 0:
         skip_students = [x for x in submission_fns if x not in chose_students]
