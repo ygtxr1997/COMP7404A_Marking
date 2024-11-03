@@ -266,7 +266,7 @@ def check_test_case(problem_id, test_case_id, student_code_problem, student_code
             if isinstance(error, TimeoutError) and args.debug:
                 logger.debug(msg)
             else:
-                logger.error(msg)
+                logger.warning(msg)
             return False
         return True
 
