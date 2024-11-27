@@ -266,7 +266,7 @@ def check_test_case(problem_id, test_case_id, student_code_problem, student_code
             if isinstance(error, TimeoutError) and args.debug:
                 logger.debug(msg)
             else:
-                logger.error(msg)
+                logger.warning(msg)
             return False
         return True
 
@@ -711,7 +711,7 @@ if __name__ == "__main__":
 
     # 1. Calculating scores case-by-case
     submission_fns = os.listdir(submission_dir)
-    submission_fns = [x for x in submission_fns if 'assign' in x]
+    submission_fns = [x for x in submission_fns if '.DS' not in x]  # remove .DS_Store on MAC
     # submission_fns = [x for x in submission_fns if 'Yuan Ge' not in x]  # remove TA's data
     if args.chose and len(chose_students) > 0:
         skip_students = [x for x in submission_fns if x not in chose_students]
