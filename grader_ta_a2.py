@@ -334,7 +334,6 @@ def a2_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
     cur_scores: List = []
 
     try:
-        # sup_printer.close()
         import p1
         importlib.reload(p1)
         grade_out = grade(1, -6, p1.random_play_single_ghost, parse.read_layout_problem, 
@@ -347,7 +346,6 @@ def a2_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
         e = error
         s1, s2 = 0., 0.
     finally:
-        # sup_printer.open()
         if e is not None:
             logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 1')
     cur_scores.append((s1,))
@@ -468,70 +466,147 @@ def read_manual_score(fn='a2/manual.csv', logger=None):
             f_csv = csv.reader(f, delimiter=',')
             csv_content = [row for row in f_csv]
         manual_dict = {}
-        for row in csv_content:
-            student_folder, ratio, reason = row
-            manual_dict[student_folder] = (float(ratio), str(reason))
+        for row_idx, row in enumerate(csv_content):
+            if row_idx == 0: continue  # headers
+            student_folder, first_name, last_name, student_number, final_reason, final_score = row
+            if final_score != '':
+                manual_dict[student_number] = (float(final_score), str(final_reason))
     except Exception as e:
-        logger.warning('[Warning] manual.csv not found, using default mannual score.')
+        logger.warning(f'[Warning] {fn} not found, using default manual score.')
         manual_dict = {}
     return manual_dict
 
 
+def read_saved_score(fn='a2_scores.csv', logger=None):
+    import csv
+    try:
+        with open(fn, 'r', newline='', encoding='utf-8') as f:
+            f_csv = csv.reader(f, delimiter=',')
+            csv_content = [row for row in f_csv]
+        saved_dict = {}
+        headers = []
+        for r_idx, row in enumerate(csv_content):
+            if r_idx == 0:  # headers
+                saved_dict['headers'] = headers = row
+            else:
+                student_number = str(row[3])
+                saved_dict[student_number] = {headers[i]: row[i] for i in range(len(row))}
+    except Exception as e:
+        logger.warning(f'[Warning] {fn} not found, using default score dict.')
+        headers = ['student_id', 'first_name', 'last_name', 'student_number', 'group', 'email',
+            'p1_vis',
+            'p2_tier3', 'p2_tier2', 'p2_tier1',
+            'p3_vis',
+            'p4_tier3', 'p4_tier2', 'p4_tier1',
+            'p5_tier3', 'p5_tier2', 'p5_tier1',
+            'p6_tier3', 'p6_tier2', 'p6_tier1',
+            'auto_score',
+            'auto_discounted',
+            'final_reason',
+            'final_score',
+            'feedback',
+        ]
+        saved_dict = {
+            'headers': headers,  # students are empty
+        }
+    return saved_dict
+
+
 # Customized for different assignments
-def save_scores_as_csv(assignment, student_score_dict):
+def read_scores_from_csv(assignment: str):
     import csv
     email_dict = read_emails(logger=logger)
-    manual_dict = read_manual_score(f'{assignment}/manual.csv', logger=logger)
+
+    # default values
+    score_dict = {}
+    for full_name in email_dict.keys():
+        row_dict = {}
+        row_dict["student_id"] = None
+        row_dict["first_name"] = email_dict[full_name]['first_name']
+        row_dict["last_name"] = email_dict[full_name]['last_name']
+        row_dict["student_number"] = email_dict[full_name]['student_number']
+        row_dict["group"] = email_dict[full_name]['group']
+        row_dict["email"] = email_dict[full_name]['email']
+        score_dict[row_dict['student_number']] = row_dict
+
+    # read existing values to cover default values
+    saved_score_dict = read_saved_score(f'{assignment}_scores.csv', logger=logger)
+    for student_number in score_dict.keys():
+        if student_number in saved_score_dict.keys():
+            score_dict[student_number].update(saved_score_dict[student_number])
+
+    score_dict['headers'] = saved_score_dict['headers']
+    return score_dict
+
+
+# Customized for different assignments
+def save_scores_as_csv(assignment, student_score_dict, all_score_dict):
+    """
+    assignment: str
+    student_score_dict: {`student_folder`:{'first':List, 'resubmit':List}}
+    all_score_dict: {'headers':List, `student_number`:Dict}
+    """
+    import csv
+    email_dict = read_emails(logger=logger)
+    discount_dict = read_discount(f'{assignment}/discount.csv', logger=logger)  # set discounting ratio for different students
+    manual_dict = read_manual_score(logger=logger)
+
     submit_dict = {k : False for k in email_dict.keys()}
     save_fn = f'{assignment}_scores.csv'
-    headers = ['student_id', 'first_name', 'last_name', 'student_number', 'group', 'email',
-               'p1_vis',
-               'p2_tier3', 'p2_tier2', 'p2_tier1',
-               'p3_vis',
-               'p4_tier3', 'p4_tier2', 'p4_tier1',
-               'p5_tier3', 'p5_tier2', 'p5_tier1',
-               'p6_tier3', 'p6_tier2', 'p6_tier1',
-               'auto_score',
-               'auto_discounted',
-               'final_reason',
-               'final_score',
-               'feedback',
-               ]
-    csv_rows = []
-    discount_dict = read_discount(f'{assignment}/discount.csv', logger=logger)  # set discounting ratio for different students
-    for student_id, scores in student_score_dict.items():
-        student_full_name = student_id.split('_')[0]
+    headers = all_score_dict['headers']
+
+    # update student_score_dict into all_score_dict
+    for student_folder, scores in student_score_dict.items():
+        student_full_name = student_folder.split('_')[0]
         if student_full_name in submit_dict.keys():
             submit_dict[student_full_name] = True
         if email_dict.get(student_full_name) is None:
             email_dict[student_full_name] = {
                 'first_name': 'None',
                 'last_name': 'None',
-                'student_number': 'None',
+                'student_number': str(len(email_dict) + 1),
                 'group': 'None',
                 'email': 'None',
             }
-        one_row = [str(student_id), 
-            str(email_dict[student_full_name]['first_name']),
-            str(email_dict[student_full_name]['last_name']),
-            str(email_dict[student_full_name]['student_number']),
-            str(email_dict[student_full_name]['group']),
-            str(email_dict[student_full_name]['email']),
-        ]
+        student_number = email_dict[student_full_name]['student_number']
+        student_id = student_folder
+
+        if student_number not in all_score_dict:
+            all_score_dict[student_number] = {}
+
+        all_score_dict[student_number].update({
+            'student_id': str(student_folder),
+            'first_name': str(email_dict[student_full_name]['first_name']),
+            'last_name': str(email_dict[student_full_name]['last_name']),
+            'student_number': str(email_dict[student_full_name]['student_number']),
+            'group': str(email_dict[student_full_name]['group']),
+            'email': str(email_dict[student_full_name]['email']),
+        })
+
         first_score: List = scores['first']
         resubmit_score: List = scores['resubmit']
+        key_of_score: List = headers[6:]
+        idx_of_score = 0
         if resubmit_score is None:
             # without resubmission
             for score in first_score:
                 if isinstance(score, tuple):
                     for part_score in score:
-                        one_row.append(f'{part_score:.2f}')  # visible score or tier ratio
+                        # visible score or tier ratio
+                        all_score_dict[student_number].update({
+                            key_of_score[idx_of_score] : part_score
+                        })
+                        idx_of_score += 1
                 else:
-                    one_row.append(f'{score:.2f}')  # averaged score of assignment
+                    # averaged score of assignment
+                    all_score_dict[student_number].update({
+                        key_of_score[idx_of_score] : score
+                    })
+                    idx_of_score += 1
             before_resubmit_avg, auto_avg = '', first_score[-1]
             discount_reason = ''
         else:
-            # resubmission detected
+            # resubmission detected (TODO: Not implemented)
             first_avg, resubmit_avg = first_score[-1], resubmit_score[-1]
             higher_score = resubmit_score if first_avg < resubmit_avg else first_score
             discount_ratio, discount_reason = discount_dict.get(student_id, (0.9, 'resubmit'))
@@ -549,32 +624,51 @@ def save_scores_as_csv(assignment, student_score_dict):
             discount_ratio, discount_reason = discount_dict[student_id]
             if discount_reason == 'plagiarism':
                 auto_avg *= 0.  # give zero
-        one_row.extend([f'{auto_avg:.2f}'])  # auto_score
-
-        # read manually marked score
-        final_manual_score, final_manual_reason = manual_dict.get(student_id, (0, 'not given'))
-        one_row.extend([final_manual_reason, f'{final_manual_score:.2f}'])  # final_reason, final_score
+        # auto_score
+        all_score_dict[student_number].update({
+            'auto_score': auto_avg
+        })
 
         # concat all info into a string
-        sum_info = [f'{x}:{y}' for x, y in zip(headers[6:-2], one_row[6:-1])]
+        row_dict =  all_score_dict[student_number]
+        sum_info = [f'{x}:{row_dict[x]}' for x in row_dict.keys() if x in headers[6:-2]]
         sum_info = ', '.join(reversed(sum_info))
-        one_row.append(sum_info)
+        all_score_dict[student_number].update({
+            'feedback': sum_info
+        })
 
+    # read manually marked score
+    for student_number in manual_dict.keys():
+        final_manual_score, final_manual_reason = manual_dict.get(student_number, (0, 'not given yet'))
+        # final_reason, final_score
+        all_score_dict[student_number].update({
+            'final_reason': final_manual_reason,
+            'final_score': final_manual_score,
+            'feedback': all_score_dict[student_number]['feedback'].replace(
+                'final_reason:not given yet,', f'final_reason:{final_manual_reason},')
+        })
+
+    # save all_score_dict into .csv file
+    csv_rows = []
+
+    no_headers_score_dict = {k: v for k, v in all_score_dict.items() if k != 'headers'}
+    items = list(no_headers_score_dict.items())
+    items.sort(key=lambda x: x[1]['last_name'] + x[1]['first_name'])
+    no_headers_score_dict = dict(items)
+
+    for student_number in no_headers_score_dict.keys():
+        if student_number == 'headers': continue
+        row_dict = all_score_dict[student_number]
+        one_row = []
+        for col_key in headers:
+            item_val = row_dict.get(col_key, '')
+            if isinstance(item_val, (str, int)):
+                one_row.append(item_val)
+            elif isinstance(item_val, float):
+                one_row.append(f'{item_val:.2f}')
+            else:
+                one_row.append('')
         csv_rows.append(one_row)
-
-    # append unsubmitted students
-    for student_full_name, is_submitted in submit_dict.items():
-        if not is_submitted:
-            logger.warning(f'[Warning] {student_full_name} has not submitted the code.')
-            one_row = [
-                str(f'{student_full_name}_no_submission'), 
-                str(email_dict[student_full_name]['first_name']),
-                str(email_dict[student_full_name]['last_name']),
-                str(email_dict[student_full_name]['student_number']),
-                str(email_dict[student_full_name]['group']),
-                str(email_dict[student_full_name]['email']),
-            ] + ['0.00' for _ in range(2 * 1 + 4 * 3)] + ['0.00', 'not submitted', '0.00', 'not submitted']
-            csv_rows.append(one_row)
 
     with open(save_fn, 'w', newline='', encoding='utf-8') as f:
         f_csv = csv.writer(f)
@@ -592,6 +686,7 @@ if __name__ == "__main__":
     args.add_argument('--debug', action='store_true')
     args.add_argument('--skip', action="store_true")
     args.add_argument('--chose', action="store_true")
+    args.add_argument('--manual', action="store_true")
     args = args.parse_args()
     logger = init_logger(f"{args.assignment}_output.log")
     sup_printer.logger = logger
@@ -605,14 +700,16 @@ if __name__ == "__main__":
     chose_students = []
     if args.chose:
         chose_students = [
-            "Cao Shuochen_18025314_assignsubmission_file",
+            "Chen Zihan_17991981_assignsubmission_file",
         ]
     skip_students = ['error_student3', 'example_student1', 'example_student2']
     submission_dir = make_abs_path(os.path.join(root, assignment, 'submissions/'))
     resubmission_dir = make_abs_path(os.path.join(root, assignment, 'resubmit_after_ddl/'))
 
+    # 0. Reading existing scores.csv or creating new empty score dict (if .csv not exists)
+    all_score_dict = read_scores_from_csv(assignment=assignment)  # key:student_number, value:row_dict
+
     # 1. Calculating scores case-by-case
-    student_score_dict = {}
     submission_fns = os.listdir(submission_dir)
     submission_fns = [x for x in submission_fns if 'assign' in x]
     # submission_fns = [x for x in submission_fns if 'Yuan Ge' not in x]  # remove TA's data
@@ -621,31 +718,38 @@ if __name__ == "__main__":
     submission_fns.sort()
     skip = args.skip  # True for debug
     for idx, student_folder in enumerate(submission_fns):
-        if student_folder == 'Yang Jiahao_18025337_assignsubmission_file':
+        if student_folder == 'Luo Jiyang_18025348_assignsubmission_file':
             skip = False
         if skip: continue
         if student_folder in skip_students:
             continue
-        logger.info('===' * 10 + " " + student_folder + f" ({idx}/{len(submission_fns)}) " + '===' * 10)
-        # a. Second submission, read resubmitted files first to avoid re-printing errors
-        has_resubmitted = False
-        if args.load_resubmit:
-            student_path = os.path.join(resubmission_dir, student_folder)
-            if os.path.exists(student_path):
-                has_resubmitted = True
-                a2_runtime_test(root, student_path, student_score_dict, max_time,
-                    is_resubmit=True)
-        # b. First submission
-        student_path = os.path.join(submission_dir, student_folder)
-        if os.path.isdir(student_path):
-            a2_runtime_test(root, student_path, student_score_dict, max_time,
-                is_supress_all=has_resubmitted)
 
-    # 2. Save results into a .csv file
-    if not args.chose:
+        student_score_dict = {}
+
+        if not args.manual:
+            # Start auto-grading
+            # a. Second submission, read resubmitted files first to avoid re-printing errors
+            logger.info('===' * 10 + " " + student_folder + f" ({idx}/{len(submission_fns)}) " + '===' * 10)
+            has_resubmitted = False
+            if args.load_resubmit:
+                student_path = os.path.join(resubmission_dir, student_folder)
+                if os.path.exists(student_path):
+                    has_resubmitted = True
+                    a2_runtime_test(root, student_path, student_score_dict, max_time,
+                        is_resubmit=True)
+            # b. First submission
+            student_path = os.path.join(submission_dir, student_folder)
+            if os.path.isdir(student_path):
+                a2_runtime_test(root, student_path, student_score_dict, max_time,
+                    is_supress_all=has_resubmitted)
+
+        # c. After getting score for a student, save results into a .csv file at once
         save_scores_as_csv(
             assignment=assignment,
             student_score_dict=student_score_dict,
+            all_score_dict=all_score_dict,
         )
-    else:
-        pass
+
+        if args.manual: # No need to continue iterating
+            exit()
+

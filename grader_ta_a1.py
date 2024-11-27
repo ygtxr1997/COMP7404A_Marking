@@ -121,7 +121,11 @@ class TimeoutHelper(threading.Thread):  # time-limit helper
 
             # Get the function signature
             signature = inspect.signature(self.fun)
-            num_params = len(signature.parameters)
+            default_count = 0
+            for param in signature.parameters.values():  # how many params having default values
+                if param.default != param.empty:
+                    default_count += 1
+            num_params = len(signature.parameters) - default_count
 
             if isinstance(in_problem, tuple) and num_params != 1 + len(in_args):
                 in_func = functools.partial(self.fun, *in_problem)  # Unpack arguments
@@ -151,13 +155,16 @@ class TimeoutHelper(threading.Thread):  # time-limit helper
         self.stop_event.set()  # Method to set the stop event
 
 
+sup_printer = SuprressPrint("")
+
+
 # Customized for different assignments
 def grade(problem_id, test_case_id, student_code_problem, student_code_parse,
         assignment_id: str = 'a1',
         verbose: bool = False,
         num_invisible_cases: int = 3,
         timeout_limit: float = 5 * 60 + 1,  # max running time for each testing case is 5 min
-        sup_printer: SuprressPrint = None,
+        student_folder: str = "",
         is_resubmit: bool = False,
         ):
     if verbose:
@@ -175,7 +182,7 @@ def grade(problem_id, test_case_id, student_code_problem, student_code_parse,
             test_case_fn = i
             is_ok = check_test_case(problem_id, test_case_fn, student_code_problem, student_code_parse,
                 assignment_id=assignment_id, timeout_limit=timeout_limit,
-                verbose=verbose, sup_printer=sup_printer, is_resubmit=is_resubmit,
+                verbose=verbose, student_folder=student_folder, is_resubmit=is_resubmit,
             )
             if is_ok:  # Passed!
                 passed_visible_cases.append(i)
@@ -187,7 +194,7 @@ def grade(problem_id, test_case_id, student_code_problem, student_code_parse,
             test_case_fn = i + invis_idx
             is_ok = check_test_case(problem_id, test_case_fn, student_code_problem, student_code_parse,
                 assignment_id=assignment_id, timeout_limit=timeout_limit,
-                verbose=verbose, sup_printer=sup_printer, is_resubmit=is_resubmit,
+                verbose=verbose, student_folder=student_folder, is_resubmit=is_resubmit,
             )
             if is_ok:  # Passed!
                 passed_invisible_cases.append(i)
@@ -205,15 +212,19 @@ def check_test_case(problem_id, test_case_id, student_code_problem, student_code
         assignment_id: str = 'a1',
         verbose: bool = False,
         timeout_limit: float = 5 * 60 + 1,
-        sup_printer: SuprressPrint = None,
+        student_folder: str = "",
         is_resubmit: bool = False,
         ) -> bool:
     file_name_problem = str(test_case_id)+'.prob' 
     file_name_sol = str(test_case_id)+'.sol'
     path = os.path.join(assignment_id, 'test_cases','p'+str(problem_id))
 
+    sup_printer.student_folder = student_folder
+
     try:
-        parse_timeout = TimeoutHelper(student_code_parse, (os.path.join(path,file_name_problem,)))
+        error = None
+        parse_timeout = TimeoutHelper(
+            logger, student_code_parse, (os.path.join(path,file_name_problem,)))
         parse_timeout.join(11)
         if parse_timeout.is_alive():
             raise TimeoutError("Parsing time exceeding 11 seconds!")
@@ -222,15 +233,18 @@ def check_test_case(problem_id, test_case_id, student_code_problem, student_code
             other_error = parse_timeout.error
             raise other_error[0](other_error[1])
     except Exception as e:  # handle error here
-        sup_printer.open()
-        logger.error(f'{sup_printer.student_folder} (resubmit={is_resubmit}): Found ERROR: ({e}). '
-              f'Giving zero score for problem={problem_id}, '
-              f'test_case={test_case_id}.')
-        sup_printer.close()
-        return False
+        error = e
+    finally:
+        if error is not None:
+            logger.error(f'{student_folder} (resubmit={is_resubmit}): Found ERROR: ({error}). '
+                f'Giving zero score for problem={problem_id}, '
+                f'test_case={test_case_id}.')
+            return False
 
     try:
-        timeout_helper = TimeoutHelper(student_code_problem, (problem,))
+        error = None
+        timeout_helper = TimeoutHelper(
+            logger, student_code_problem, problem)
         timeout_helper.join(timeout_limit)
         if timeout_helper.is_alive():
             raise TimeoutError(f"Running time exceeding {timeout_limit} seconds!")
@@ -239,12 +253,13 @@ def check_test_case(problem_id, test_case_id, student_code_problem, student_code
             other_error = timeout_helper.error
             raise other_error[0](other_error[1])
     except Exception as e:  # handle error here
-        sup_printer.open()
-        logger.error(f'{sup_printer.student_folder} (resubmit={is_resubmit}): Found ERROR: ({e}). '
-              f'Giving zero score for problem={problem_id}, '
-              f'test_case={test_case_id}.')
-        sup_printer.close()
-        return False
+        error = e
+    finally:
+        if error is not None:
+            logger.error(f'{student_folder} (resubmit={is_resubmit}): Found ERROR: ({error}). '
+                f'Giving zero score for problem={problem_id}, '
+                f'test_case={test_case_id}.')
+            return False
 
     solution = ''
     with open(os.path.join(path,file_name_sol)) as file_sol:
@@ -271,14 +286,15 @@ def check_test_case(problem_id, test_case_id, student_code_problem, student_code
 
 # Customized for different assignments
 def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='a1/eval_env',
-        is_resubmit: bool = False, is_supress_all: bool = False
+        is_resubmit: bool = False, has_resubmitted: bool = False
         ):
     student_folder = os.path.basename(student_path)
 
-    sup_all_printer = SuprressPrint('', is_supress_all)
-    sup_printer = SuprressPrint(student_folder, True)
+    # sup_all_printer = SuprressPrint('', has_resubmitted, logger=logger)
+    sup_printer = SuprressPrint(student_folder, not args.chose, logger=logger)
 
-    sup_all_printer.close()
+    # sup_all_printer.close()
+    sup_printer.close()
 
     # Copy students' files into eval_env
     eval_dir = os.path.join(root, eval_dir)
@@ -306,107 +322,99 @@ def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
     cur_scores: List = []
 
     try:
-        sup_printer.close()
         import p1
         importlib.reload(p1)
         s1, s2 = grade(1, -5, p1.dfs_search, parse.read_graph_search_problem, 
-            timeout_limit=max_time, sup_printer=sup_printer, is_resubmit=is_resubmit)
+            timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit)
         e = None
     except Exception as error:
         e = error
         s1, s2 = 0., 0.
     finally:
-        sup_printer.open()
         if e is not None:
             logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 1')
     cur_scores.append((s1, s2))
 
     try:
-        sup_printer.close()
+        e = None
         import p2
         importlib.reload(p2)
         s1, s2 = grade(2, -5, p2.bfs_search, parse.read_graph_search_problem, 
-            timeout_limit=max_time, sup_printer=sup_printer, is_resubmit=is_resubmit)
+            timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit)
     except Exception as error:
         e = error
         s1, s2 = 0., 0.
     finally:
-        sup_printer.open()
         if e is not None:
             logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 2')
     cur_scores.append((s1, s2))
 
     try:
-        sup_printer.close()
+        e = None
         import p3
         importlib.reload(p3)
         s1, s2 = grade(3, -6, p3.ucs_search, parse.read_graph_search_problem, 
-            timeout_limit=max_time, sup_printer=sup_printer, is_resubmit=is_resubmit)
+            timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit)
     except Exception as error:
         e = error
         s1, s2 = 0., 0.
     finally:
-        sup_printer.open()
         if e is not None:
             logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 3')
     cur_scores.append((s1, s2))
 
     try:
-        sup_printer.close()
+        e = None
         import p4
         importlib.reload(p4)
         s1, s2 = grade(4, -6, p4.greedy_search, parse.read_graph_search_problem, 
-            timeout_limit=max_time, sup_printer=sup_printer, is_resubmit=is_resubmit)
+            timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit)
     except Exception as error:
         e = error
         s1, s2 = 0., 0.
     finally:
-        sup_printer.open()
         if e is not None:
             logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 4')
     cur_scores.append((s1, s2))
 
     try:
-        sup_printer.close()
+        e = None
         import p5
         importlib.reload(p5)
         s1, s2 = grade(5, -6, p5.astar_search, parse.read_graph_search_problem, 
-            timeout_limit=max_time, sup_printer=sup_printer, is_resubmit=is_resubmit)
+            timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit)
     except Exception as error:
         e = error
         s1, s2 = 0., 0.
     finally:
-        sup_printer.open()
         if e is not None:
             logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 5')
     cur_scores.append((s1, s2))
 
     try:
-        sup_printer.close()
+        e = None
         import p6
         importlib.reload(p6)
         s1, s2 = grade(6, -4, p6.number_of_attacks, parse.read_8queens_search_problem, 
-            timeout_limit=max_time, sup_printer=sup_printer, is_resubmit=is_resubmit)
+            timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit)
     except Exception as error:
         e = error
         s1, s2 = 0., 0.
     finally:
-        sup_printer.open()
         if e is not None:
             logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 6')
     cur_scores.append((s1, s2))
 
     try:
-        sup_printer.close()
+        e = None
         import p7
         importlib.reload(p7)
         s1, s2 = grade(7, -6, p7.better_board, parse.read_8queens_search_problem, 
-            timeout_limit=max_time, sup_printer=sup_printer, is_resubmit=is_resubmit)
+            timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit)
     except Exception as error:
         e = error
         s1, s2 = 0., 0.
     finally:
-        sup_printer.open()
         if e is not None:
             logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 7')
     cur_scores.append((s1, s2))
@@ -430,10 +438,15 @@ def a1_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
             'resubmit': cached_resubmit_score,  # unchanged or None
         }
 
-    sup_all_printer.open()
+    sup_printer.open()
+    # sup_all_printer.open()
 
     shutil.rmtree(eval_dir)
     os.makedirs(eval_dir, exist_ok=True)
+
+    logger.info(f"Finished evaluation (is_resubmit={is_resubmit})")
+    print(cur_scores)
+
     return
 
 
@@ -563,7 +576,7 @@ def save_scores_as_csv(assignment, student_score_dict):
         # check plagiarism info
         if discount_dict.get(student_id) is not None:
             discount_ratio, discount_reason = discount_dict[student_id]
-            if discount_reason == 'plagiarism':
+            if 'plagiarism' in discount_reason:
                 final_avg *= 0.  # give zero
         one_row.extend([before_resubmit_avg, discount_reason, f'{final_avg:.2f}'])
 
@@ -602,15 +615,23 @@ if __name__ == "__main__":
     args.add_argument('--load_resubmit', action='store_true',
         help='Whether check resubmitted files.')
     args.add_argument('--debug', action='store_true')
+    args.add_argument('--skip', action="store_true")
+    args.add_argument('--chose', action="store_true")
     args = args.parse_args()
     logger = init_logger(f"{args.assignment}_output.log")
+    sup_printer.logger = logger
 
     root = args.root
     assignment = args.assignment
     if args.debug:
-        max_time = 0.1  # 1 for debug, 301 for real marking
+        max_time = 1.1  # 1 for debug, 301 for real marking
     else:
         max_time = 301
+    chose_students = []
+    if args.chose:
+        chose_students = [
+            "Han Mengchi_17992097_assignsubmission_file",
+        ]
     skip_students = ['error_student3', 'example_student1', 'example_student2']
     submission_dir = make_abs_path(os.path.join(root, assignment, 'submissions/'))
     resubmission_dir = make_abs_path(os.path.join(root, assignment, 'resubmit_after_ddl/'))
@@ -618,11 +639,19 @@ if __name__ == "__main__":
     # 1. Calculating scores case-by-case
     student_score_dict = {}
     submission_fns = os.listdir(submission_dir)
-    submission_fns = [x for x in submission_fns if 'assign' in x and 'Yuan_Ge' not in x]
+    submission_fns = [x for x in submission_fns if 'assign' in x]
+    submission_fns = [x for x in submission_fns if 'Yuan Ge' not in x]  # remove TA's data
+    if args.chose and len(chose_students) > 0:
+        skip_students = [x for x in submission_fns if x not in chose_students]
     submission_fns.sort()
+    skip = args.skip  # True for debug
     for idx, student_folder in enumerate(submission_fns):
+        if student_folder == 'Yang Jiahao_18025337_assignsubmission_file':
+            skip = False
+        if skip: continue
         if student_folder in skip_students:
             continue
+        logger.info('===' * 10 + " " + student_folder + f" ({idx}/{len(submission_fns)}) " + '===' * 10)
         # a. Second submission, read resubmitted files first to avoid re-printing errors
         has_resubmitted = False
         if args.load_resubmit:
@@ -635,10 +664,13 @@ if __name__ == "__main__":
         student_path = os.path.join(submission_dir, student_folder)
         if os.path.isdir(student_path):
             a1_runtime_test(root, student_path, student_score_dict, max_time,
-                is_supress_all=has_resubmitted)
+                has_resubmitted=has_resubmitted)
 
     # 2. Save results into a .csv file
-    save_scores_as_csv(
-        assignment=assignment,
-        student_score_dict=student_score_dict,
-    )
+    if not args.chose:
+        save_scores_as_csv(
+            assignment=assignment,
+            student_score_dict=student_score_dict,
+        )
+    else:
+        pass
