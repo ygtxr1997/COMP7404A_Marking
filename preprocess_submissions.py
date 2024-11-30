@@ -5,8 +5,8 @@ from tqdm import tqdm
 import shutil
 
 
-# root = 'D:/Documents/HKU/COMP7404_Marking/'
-root = '/Users/greensongavin/Documents/HKU/COMP7404A/'
+root = 'D:/Documents/HKU/COMP7404_Marking/'
+# root = '/Users/greensongavin/Documents/HKU/COMP7404A/'
 meta_info = {
     'a1': {
         'downloads': f'{root}/a1/downloads/COMP7404_1A_2024-Submit a1-3484224.zip',
@@ -21,6 +21,13 @@ meta_info = {
         'standard_unzip': f'{root}/a2/downloads/standard_unzip',
         'submissions': f'{root}/a2/submissions/',
         'resubmit': f'{root}/a2/resubmit_after_ddl/',
+    },
+    'a3': {
+        'downloads': f'{root}/a3/downloads/COMP7404_1A_2024-Submit a3-3507151.zip',
+        'naive_unzip': f'{root}/a3/downloads/naive_unzip',
+        'standard_unzip': f'{root}/a3/downloads/standard_unzip',
+        'submissions': f'{root}/a3/submissions/',
+        'resubmit': f'{root}/a3/resubmit_after_ddl/',
     }
 }
 
@@ -103,7 +110,7 @@ def copy_resubmit_to_submissions(resubmit, submissions):
 
 if __name__ == "__main__":
     args = argparse.ArgumentParser('Preprocess')
-    args.add_argument('-a', '--assignment', type=str, choices=['a1', 'a2'])
+    args.add_argument('-a', '--assignment', type=str, choices=['a1', 'a2', 'a3'])
     opts = args.parse_args()
 
     meta_data = meta_info[opts.assignment]

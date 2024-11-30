@@ -14,78 +14,13 @@ verbose = False  # some students are using this value
 sup_printer = SuprressPrint("")
 
 
-class TierHelper(object):
-    def __init__(self):
-        self.tiers = [None, 'tier1', 'tier2', 'tier3']
-        self.a2_tier_dict = {
-            2: {
-                # 'tier':[(case_id, (arguments,), win_rate)]
-                'tier3': [(1, (10,), 0)],
-                'tier2': [(2, (10,), 30), 
-                        (3, (10,), 30), 
-                        (4, (10,), 30)],
-                'tier1': [(5, (10,), 40)]
-            },
-            4: {
-                # 'tier':[(case_id, (arguments,), win_rate)]
-                'tier3': [(1, (10,), 0)],
-                'tier2': [(4, (100,), 5),
-                        (7, (100,), 5),
-                        (5, (100,), 5),],
-                'tier1': [(9, (10,), 5)]
-            },
-            5: {
-                # 'tier':[(case_id, (arguments,), win_rate)]
-                'tier3': [(1, (2, 1), 0)],
-                'tier2': [(2, (7, 1), 0),
-                        (7, (3, 1), 0),],
-                'tier1': [(4, (2, 1), 0), (8, (4, 1), 0)]
-            },
-            6: {
-                # 'tier':[(case_id, (arguments,), win_rate)]
-                'tier3': [(1, (1, 1), 0)],
-                'tier2': [(6, (2, 1), 0), ],
-                'tier1': [(3, (5, 8), 0), (5, (3, 1), 0)]
-            }
-        }  # problem: 'tier': [(case, (trials) or (depth,trials), win_rate)]
-
-    def get_tier_conditon(self, problem_id: int, tier_id: int, num_cases: int):
-        assert tier_id in range(1, len(self.tiers))
-        tier_cond: List = self.a2_tier_dict[problem_id][self.tiers[tier_id]]
-
-        case_ids = []
-        params = []
-        win_rates = []
-        for case_cond in tier_cond:
-            case, param, win_rate = case_cond
-            if case == 'all':
-                case_ids = list(range(1, num_cases + 1))
-                params = [param for _ in range(num_cases)]
-                win_rates = [win_rate for _ in range(num_cases)]
-                break
-            case_ids.append(case)
-            params.append(param)
-            win_rates.append(win_rate)
-
-        return {
-            'case_id': case_ids,
-            'param': params,
-            'win_rate': win_rates,
-        }
-
-    def is_tier_mode_problem(self, problem_id: int):
-        return problem_id in self.a2_tier_dict.keys()
-
-
-
 # Customized for different assignments
 def grade(problem_id, test_case_id, student_code_problem, student_code_parse,
-        assignment_id: str = 'a2',
+        assignment_id: str = 'a3',
         verbose: bool = False,
         timeout_limit: float = 5 * 60 + 1,  # max running time for each testing case is 5 min
         student_folder: str = "",
         is_resubmit: bool = False,
-        tier_helper: TierHelper = None,
     ) -> dict:
     if verbose:
         print('Grading Problem', problem_id,':')
@@ -96,83 +31,23 @@ def grade(problem_id, test_case_id, student_code_problem, student_code_parse,
     else:
         # Multiple test cases
         num_test_cases = test_case_id * (-1)
-        is_tier_mode = tier_helper.is_tier_mode_problem(problem_id)
 
         # 1. Vanilla testing mode
-        if not is_tier_mode:
-            passed_visible_cases, failed_visible_cases = [], []  # visible testing cases
-            for i in range(1, num_test_cases+1):
-                test_case_fn = i
-                
-                is_ok = check_test_case(problem_id, test_case_fn, student_code_problem, student_code_parse,
-                    assignment_id=assignment_id, timeout_limit=timeout_limit,
-                    verbose=verbose, student_folder=student_folder, is_resubmit=is_resubmit,
-                )
-                if is_ok:  # Passed!
-                    passed_visible_cases.append(i)
-                else:  # Failed!
-                    failed_visible_cases.append(i)
-
-            visible_score = 100. * len(passed_visible_cases) / len(passed_visible_cases + failed_visible_cases)
-            return {'visible_score': visible_score}
-        
-        # 2. Tier testing mode
-        else:
-            tiers_passed_cases = []
-            tiers_failed_cases = []
-
-            iter_order = list(range(1, 3 + 1))
-            for tier_id in iter_order:  # tier3 > tier2 > tier1
-                cases_cond = tier_helper.get_tier_conditon(problem_id, tier_id, num_test_cases)
-                case_ids = cases_cond['case_id']
-                params = cases_cond['param']  # (trials) or (depth,trials)
-                win_rates = cases_cond['win_rate']
-                tier_passed_cases, tier_failed_cases = [], []
-
-                for i, case_id in enumerate(case_ids):
-                    test_case_fn = case_id
-                    is_ok = check_test_case(problem_id, test_case_fn, student_code_problem, student_code_parse,
-                        assignment_id=assignment_id, timeout_limit=timeout_limit,
-                        verbose=verbose, student_folder=student_folder, is_resubmit=is_resubmit,
-                        case_cond={'param': params[i],
-                                   'win_rate': win_rates[i]},
-                    )
-
-                    # # Try different meaning of depth (ply or summed)
-                    # if len(params[i]) >= 2:  # (depth,trials)
-                    #     ply_depth = (1 + 4) * params[0]
-                    #     ply_param = (ply_depth, *params[:-1])
-                    #     ply_ok = check_test_case(problem_id, test_case_fn, student_code_problem, student_code_parse,
-                    #         assignment_id=assignment_id, timeout_limit=timeout_limit,
-                    #         verbose=verbose, sup_printer=sup_printer, is_resubmit=is_resubmit,
-                    #         case_cond={'param': ply_param,
-                    #                 'win_rate': win_rates[i]},
-                    #     )
-                    #     is_ok = is_ok or ply_ok
-
-                    if is_ok:
-                        tier_passed_cases.append(case_id)
-                    else:
-                        tier_failed_cases.append(case_id)
-
-                tiers_passed_cases.append(tier_passed_cases)
-                tiers_failed_cases.append(tier_failed_cases)
-
-                # If tier1 passed, tier 2 and 3 will not be checked
-                if len(tier_failed_cases) == 0:
-                    break
+        passed_visible_cases, failed_visible_cases = [], []  # visible testing cases
+        for i in range(1, num_test_cases+1):
+            test_case_fn = i
             
-            # Append 100 as padding
-            for i in range(len(tiers_passed_cases), len(iter_order)):
-                tiers_passed_cases.append([100] * 3)
-                tiers_failed_cases.append([])
+            is_ok = check_test_case(problem_id, test_case_fn, student_code_problem, student_code_parse,
+                assignment_id=assignment_id, timeout_limit=timeout_limit,
+                verbose=verbose, student_folder=student_folder, is_resubmit=is_resubmit,
+            )
+            if is_ok:  # Passed!
+                passed_visible_cases.append(i)
+            else:  # Failed!
+                failed_visible_cases.append(i)
 
-            tiers_passed_ratio = [
-                len(tiers_passed_cases[i]) / (len(tiers_passed_cases[i]) + len(tiers_failed_cases[i])) * 100 
-                for i in range(len(tiers_passed_cases))
-            ]  # 
-            return {f'tier{tier_id + 1}_passed': tiers_passed_ratio[tier_id] 
-                    for tier_id in range(len(tiers_passed_ratio))}
+        visible_score = 100. * len(passed_visible_cases) / len(passed_visible_cases + failed_visible_cases)
+        return {'visible_score': visible_score}
 
 
 # Customized for different assignments
@@ -241,21 +116,13 @@ def check_test_case(problem_id, test_case_id, student_code_problem, student_code
             logger.error(f"{student_folder} (resubmit={is_resubmit}): Error at: {timeout_helper.line_info}")
             raise other_error[0](other_error[1])
 
-        # P1,P3
-        if problem_id in (1, 3):
+        # P1,P2,P3
+        if problem_id in (1, 2, 3):
             student_solution = student_solution[0]  # since wrapped with list
             return cmp_solutions(path, file_name_sol, student_solution, test_case_id)
         # P2,P4,P5,P6
         else:
-            assert problem_id in (2, 4, 5, 6), "Problem ID not supported"
-            win_count = 0
-            for trial_solution in student_solution:  # num_trials*[(out1,out2,...)]
-                assert len(trial_solution) == 2, "Student's output #params > 2"
-                _, winner = trial_solution
-                if winner == 'Pacman': win_count += 1
-            win_p = win_count / len(student_solution) * 100
-            # logger.info(f"Problem={problem_id}, Case={test_case_id}, Win_Rate={win_rate}")
-            return win_p >= win_rate * 0.95  # loose the win rate condition
+            raise NotImplementedError("Problem ID not supported")
     except Exception as e:  # handle error here
         error = e
     finally:
@@ -296,14 +163,13 @@ def cmp_solutions(path, file_name_sol, student_solution, test_case_id, verbose=F
 
 
 # Customized for different assignments
-def a2_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='a2/eval_env',
+def a3_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='a3/eval_env',
         is_resubmit: bool = False, is_supress_all: bool = True
         ):
     student_folder = os.path.basename(student_path)
 
     # sup_all_printer = SuprressPrint('', False)  # only used when is resubmitted
     sup_printer = SuprressPrint(student_folder, True, logger=logger)  # default: True; for debug, set False
-    tier_helper = TierHelper()
 
     sup_printer.close()
     # sup_all_printer.close()
@@ -311,7 +177,7 @@ def a2_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
     # Copy students' files into eval_env
     eval_dir = os.path.join(root, eval_dir)
     os.makedirs(eval_dir, exist_ok=True)
-    problem_fns = [f'{x}.py' for x in ['parse', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6',]]
+    problem_fns = [f'{x}.py' for x in ['parse', 'p1', 'p2', 'p3', 'p4',]]
     customized_proj_fns = [s for s in os.listdir(student_path) if '.py' in s and 'grader' not in s]
     customized_proj_fns = list(filter(lambda x: x not in problem_fns, customized_proj_fns))
     if len(customized_proj_fns) > 0:
@@ -336,9 +202,9 @@ def a2_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
     try:
         import p1
         importlib.reload(p1)
-        grade_out = grade(1, -6, p1.random_play_single_ghost, parse.read_layout_problem, 
+        grade_out = grade(1, -8, p1.play_episode, parse.read_grid_mdp_problem_p1, 
             timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit,
-            tier_helper=tier_helper)
+            )
         s1 = grade_out['visible_score']
         s2 = 0.
         e = None
@@ -354,25 +220,26 @@ def a2_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
         e = None
         import p2
         importlib.reload(p2)
-        grade_out = grade(2, -5, p2.better_play_single_ghosts, parse.read_layout_problem, 
+        grade_out = grade(2, -7, p2.policy_evaluation, parse.read_grid_mdp_problem_p2, 
             timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit,
-            tier_helper=tier_helper)
-        s1, s2, s3 = grade_out['tier1_passed'], grade_out['tier2_passed'], grade_out['tier3_passed']
+            )
+        s1 = grade_out['visible_score']
+        s2 = 0.
     except Exception as error:
         e = error
-        s1, s2, s3 = 0., 0., 0.
+        s1, s2 = 0., 0.
     finally:
         if e is not None:
             logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 2')
-    cur_scores.append((s3, s2, s1))
+    cur_scores.append((s1,))
 
     try:
         e = None
         import p3
         importlib.reload(p3)
-        grade_out = grade(3, -7, p3.random_play_multiple_ghosts, parse.read_layout_problem, 
+        grade_out = grade(3, -4, p3.value_iteration, parse.read_grid_mdp_problem_p3, 
             timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit,
-            tier_helper=tier_helper)
+            )
         s1 = grade_out['visible_score']
         s2 = 0.
     except Exception as error:
@@ -383,56 +250,11 @@ def a2_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
             logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 3')
     cur_scores.append((s1,))
 
-    try:
-        e = None
-        import p4
-        importlib.reload(p4)
-        grade_out = grade(4, -9, p4.better_play_multiple_ghosts, parse.read_layout_problem, 
-            timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit,
-            tier_helper=tier_helper)
-        s1, s2, s3 = grade_out['tier1_passed'], grade_out['tier2_passed'], grade_out['tier3_passed']
-    except Exception as error:
-        e = error
-        s1, s2, s3 = 0., 0., 0.
-    finally:
-        if e is not None:
-            logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 4')
-    cur_scores.append((s3, s2, s1))
-
-    try:
-        e = None
-        import p5
-        importlib.reload(p5)
-        grade_out = grade(5, -9, p5.min_max_multiple_ghosts, parse.read_layout_problem, 
-            timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit,
-            tier_helper=tier_helper)
-        s1, s2, s3 = grade_out['tier1_passed'], grade_out['tier2_passed'], grade_out['tier3_passed']
-    except Exception as error:
-        e = error
-        s1, s2, s3 = 0., 0., 0.
-    finally:
-        if e is not None:
-            logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 5')
-    cur_scores.append((s3, s2, s1))
-
-    try:
-        e = None
-        import p6
-        importlib.reload(p6)
-        grade_out = grade(6, -9, p6.expecti_max_multiple_ghosts, parse.read_layout_problem, 
-            timeout_limit=max_time, student_folder=student_folder, is_resubmit=is_resubmit,
-            tier_helper=tier_helper)
-        s1, s2, s3 = grade_out['tier1_passed'], grade_out['tier2_passed'], grade_out['tier3_passed']
-    except Exception as error:
-        e = error
-        s1, s2, s3 = 0., 0., 0.
-    finally:
-        if e is not None:
-            logger.error(f'{student_folder} (resubmit={is_resubmit}): {e}, giving zero for the problem 6')
-    cur_scores.append((s3, s2, s1))
+    # give problem 4 for zero scores by default
+    cur_scores.append((0,))
 
     assignment_score = calc_assignment_score(cur_scores, 
-                                             max_problem_score_sums=[100,300,100,300,300,300])
+                                             max_problem_score_sums=[100,100,100,100])
     cur_scores.append(assignment_score)
     # logger.info(student_folder, cur_scores)
 
@@ -459,7 +281,8 @@ def a2_runtime_test(root, student_path, student_score_dict, max_time, eval_dir='
     return
 
 
-def read_manual_score(fn='a2/manual.csv', logger=None):
+# Customized for different assignments
+def read_manual_score(fn='a3/manual.csv', logger=None):
     import csv
     try:
         with open(fn, 'r', newline='', encoding='utf-8') as f:
@@ -468,16 +291,17 @@ def read_manual_score(fn='a2/manual.csv', logger=None):
         manual_dict = {}
         for row_idx, row in enumerate(csv_content):
             if row_idx == 0: continue  # headers
-            student_folder, first_name, last_name, student_number, final_reason, final_score = row
-            if final_score != '':
-                manual_dict[student_number] = (float(final_score), str(final_reason))
+            student_folder, first_name, last_name, student_number, p4_reason, p4_score, final_score = row
+            if p4_score != '':
+                manual_dict[student_number] = (float(p4_score), str(p4_reason), str(final_score))
     except Exception as e:
-        logger.warning(f'[Warning] {fn} not found, using default manual score.')
+        logger.warning(f'[Warning] {fn} not found, using default manual score. {e}')
         manual_dict = {}
     return manual_dict
 
 
-def read_saved_score(fn='a2_scores.csv', logger=None):
+# Customized for different assignments
+def read_saved_score(fn='a3_scores.csv', logger=None):
     import csv
     try:
         with open(fn, 'r', newline='', encoding='utf-8') as f:
@@ -495,11 +319,9 @@ def read_saved_score(fn='a2_scores.csv', logger=None):
         logger.warning(f'[Warning] {fn} not found, using default score dict.')
         headers = ['student_id', 'first_name', 'last_name', 'student_number', 'group', 'email',
             'p1_vis',
-            'p2_tier3', 'p2_tier2', 'p2_tier1',
+            'p2_vis',
             'p3_vis',
-            'p4_tier3', 'p4_tier2', 'p4_tier1',
-            'p5_tier3', 'p5_tier2', 'p5_tier1',
-            'p6_tier3', 'p6_tier2', 'p6_tier1',
+            'p4_manual',
             'auto_score',
             'auto_discounted',
             'final_reason',
@@ -639,17 +461,45 @@ def save_scores_as_csv(assignment, student_score_dict, all_score_dict):
 
     # read manually marked score
     for student_number in manual_dict.keys():
-        final_manual_score, final_manual_reason = manual_dict.get(student_number, (0, 'not given yet'))
-        # final_reason, final_score
-        final_reason_left_idx = all_score_dict[student_number]['feedback'].find("final_reason:")
-        final_reason_right_idx = all_score_dict[student_number]['feedback'].find(" auto_discounted:")  # begins with a space
-        final_reason_to_be_replaced = all_score_dict[student_number]['feedback'][final_reason_left_idx: final_reason_right_idx]
-        all_score_dict[student_number].update({
-            'final_reason': final_manual_reason,
-            'final_score': final_manual_score,
-            'feedback': all_score_dict[student_number]['feedback'].replace(
-                final_reason_to_be_replaced, f'final_reason:{final_manual_reason},')
-        })
+        p4_manual_score, p4_manual_reason, final_manual_score = manual_dict.get(student_number, (0, 'not given yet', ''))
+        if 'feedback' in all_score_dict[student_number].keys():
+            # final_reason, final_score
+            final_reason_left_idx = all_score_dict[student_number]['feedback'].find("final_reason:")
+            final_reason_right_idx = all_score_dict[student_number]['feedback'].find(" auto_score:")  # begins with a space
+            final_reason_to_be_replaced = all_score_dict[student_number]['feedback'][final_reason_left_idx: final_reason_right_idx]
+            # auto_score
+            auto_score_left_idx = all_score_dict[student_number]['feedback'].find("auto_score:")
+            auto_score_right_idx = all_score_dict[student_number]['feedback'].find(" p4_manual:")  # begins with a space
+            auto_score_to_be_replaced = all_score_dict[student_number]['feedback'][auto_score_left_idx: auto_score_right_idx]
+            # p4_manual
+            p4_manual_left_idx = all_score_dict[student_number]['feedback'].find("p4_manual:")
+            p4_manual_right_idx = all_score_dict[student_number]['feedback'].find(" p3_vis:")  # begins with a space
+            p4_manual_to_be_replaced = all_score_dict[student_number]['feedback'][p4_manual_left_idx: p4_manual_right_idx]
+            # udpate scores
+            p1_score = float(all_score_dict[student_number]['p1_vis'] if all_score_dict[student_number]['p1_vis'] != '' else 0)
+            p2_score = float(all_score_dict[student_number]['p2_vis'] if all_score_dict[student_number]['p2_vis'] != '' else 0)
+            p3_score = float(all_score_dict[student_number]['p3_vis'] if all_score_dict[student_number]['p3_vis'] != '' else 0)
+            auto_score = (p1_score + p2_score + p3_score) / 3
+            final_score = (p1_score + p2_score + p3_score + float(p4_manual_score)) / 4
+            final_reason = f"`p4 {p4_manual_reason}`"
+            if final_reason_to_be_replaced != '':
+                feedback = all_score_dict[student_number]['feedback'].replace(
+                        final_reason_to_be_replaced, f'final_reason:{final_reason},') if \
+                            final_reason_to_be_replaced != '' else all_score_dict[student_number]['feedback']
+            else:
+                feedback = f"final_reason:{final_reason}, {all_score_dict[student_number]['feedback']}"
+            feedback = feedback.replace(
+                    auto_score_to_be_replaced, f'auto_score:{auto_score:.2f},') if auto_score_to_be_replaced != '' else feedback
+            feedback = feedback.replace(
+                    p4_manual_to_be_replaced, f'p4_manual:{p4_manual_score},') if p4_manual_to_be_replaced != '' else feedback
+            if feedback == '': feedback = 'not submitted'
+            all_score_dict[student_number].update({
+                'p4_manual': p4_manual_score,
+                'auto_score': auto_score,
+                'final_reason': final_reason,
+                'final_score': final_score,
+                'feedback': feedback,
+            })
 
     # save all_score_dict into .csv file
     csv_rows = []
@@ -680,10 +530,10 @@ def save_scores_as_csv(assignment, student_score_dict, all_score_dict):
 
 
 if __name__ == "__main__":
-    args = argparse.ArgumentParser("Auto grading for Assignment 2.")
+    args = argparse.ArgumentParser("Auto grading for Assignment 3.")
     args.add_argument('-r', '--root', type=str, default='D:/Documents/HKU/COMP7404_Marking/',
-        help='Where you place your "a2/submissions/" and "a2/eval_env/", ')
-    args.add_argument('-a', '--assignment', type=str, default='a2')
+        help='Where you place your "a3/submissions/" and "a3/eval_env/", ')
+    args.add_argument('-a', '--assignment', type=str, default='a3')
     args.add_argument('--load_resubmit', action='store_true',
         help='Whether check resubmitted files.')
     args.add_argument('--debug', action='store_true')
@@ -703,9 +553,9 @@ if __name__ == "__main__":
     chose_students = []
     if args.chose:
         chose_students = [
-            "Chu Kwok Kit Jacky_18025285_assignsubmission_file",
+            "AtYuan Ge_assign",
         ]
-    skip_students = ['error_student3', 'example_student1', 'example_student2']
+    skip_students = ['error_student3', 'example_student1', 'example_student2', 'AtYuan Ge_assign']
     submission_dir = make_abs_path(os.path.join(root, assignment, 'submissions/'))
     resubmission_dir = make_abs_path(os.path.join(root, assignment, 'resubmit_after_ddl/'))
 
@@ -721,7 +571,7 @@ if __name__ == "__main__":
     submission_fns.sort()
     skip = args.skip  # True for debug
     for idx, student_folder in enumerate(submission_fns):
-        if student_folder == 'Luo Jiyang_18025348_assignsubmission_file':
+        if student_folder == 'AtYuan Ge_assign':
             skip = False
         if skip: continue
         if student_folder in skip_students:
@@ -738,12 +588,12 @@ if __name__ == "__main__":
                 student_path = os.path.join(resubmission_dir, student_folder)
                 if os.path.exists(student_path):
                     has_resubmitted = True
-                    a2_runtime_test(root, student_path, student_score_dict, max_time,
+                    a3_runtime_test(root, student_path, student_score_dict, max_time,
                         is_resubmit=True)
             # b. First submission
             student_path = os.path.join(submission_dir, student_folder)
             if os.path.isdir(student_path):
-                a2_runtime_test(root, student_path, student_score_dict, max_time,
+                a3_runtime_test(root, student_path, student_score_dict, max_time,
                     is_supress_all=has_resubmitted)
 
         # c. After getting score for a student, save results into a .csv file at once

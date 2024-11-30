@@ -1,0 +1,146 @@
+student_id	first_name	last_name	student_number	p4_reason	p4_score
+Bai Qingyuan_18118026_assignsubmission_file	Qingyuan	Bai	3036410653		
+Cai Danzhi_18118053_assignsubmission_file	Danzhi	Cai	3036382973		
+Cai Zekun_18118022_assignsubmission_file	Zekun	Cai	3036380107		
+Cao Shuochen_18118070_assignsubmission_file	Shuochen	Cao	3036382961		
+Cao Yannan_18117994_assignsubmission_file	Yannan	Cao	3036380810		
+Chan Ka Hung_18118049_assignsubmission_file	Ka Hung	Chan	3036412170		
+Chang Chun Hei_18118044_assignsubmission_file	Chun Hei	Chang	3036383379		
+Chen Jinming_18117973_assignsubmission_file	Jinming	Chen	3036381591		
+Chen Xingjian_18118094_assignsubmission_file	Xingjian	Chen	3036382181		
+Chen Zhiluo_18117997_assignsubmission_file	Zhiluo	Chen	3036409630		
+Chen Zihan_18117998_assignsubmission_file	Zihan	Chen	3036409654		
+Cheung Yu Lung_18118028_assignsubmission_file	Yu Lung	Cheung	3035477616		
+Chu Kwok Kit Jacky_18118080_assignsubmission_file	Kwok Kit Jacky	Chu	3036198425		
+Deng Zike_18118090_assignsubmission_file	Zike	Deng	3036380250		
+Ding Lichao_18118086_assignsubmission_file	Lichao	Ding	3036382454		
+Feng Yiwen_18117988_assignsubmission_file	Yiwen	Feng	3036382129		
+Fong Ho Yin_18117991_assignsubmission_file	Ho Yin	Fong	3036383458		
+Guan Aoran_18117992_assignsubmission_file	Aoran	Guan	3036382789		
+Guo Hengyi_18117975_assignsubmission_file	Hengyi	Guo	3036383018		
+Guo Shuocheng_18118037_assignsubmission_file	Shuocheng	Guo	3036382090		
+Guo Xiaoqing_18117981_assignsubmission_file	Xiaoqing	Guo	3036380963		
+Han Mengchi_18118081_assignsubmission_file	Mengchi	Han	3036382545		
+Han Ruobing_18117999_assignsubmission_file	Ruobing	Han	3036382234		
+Han Xinxu_18117965_assignsubmission_file	Xinxu	Han	3036453514		
+He Fuzhi_18118025_assignsubmission_file	Fuzhi	He	3036382894		
+Hong Jinghan_18118082_assignsubmission_file	Jinghan	Hong	3036409800		
+Hong Tianshun_18118043_assignsubmission_file	Tianshun	Hong	3036382557		
+Hu Hongyi_18117969_assignsubmission_file	Hongyi	Hu	3036410029		
+Huang Haoqin_18118067_assignsubmission_file	Haoqin	Huang	3036410251		
+Huang Ruifan_18118071_assignsubmission_file	Ruifan	Huang	3036381046		
+Huang Yuanzhan_18118006_assignsubmission_file	Yuanzhan	Huang	3036380303		
+Huang Yuxing_18118104_assignsubmission_file	Yuxing	Huang	3036382727		
+Jiang Han_18118056_assignsubmission_file	Han	Jiang	3036380418		
+Jiang Jiatong_18117980_assignsubmission_file	Jiatong	Jiang	3036382662		
+Jiang Mao_18118051_assignsubmission_file	Mao	Jiang	3036380195		
+Kuang Yuzhi_18118088_assignsubmission_file	Yuzhi	Kuang	3035718709		
+Kwok Wai Yin_18118000_assignsubmission_file	Wai Yin	Kwok	3036195162		
+Lam Ka Shing_18117976_assignsubmission_file	Ka Shing	Lam	3036384397		
+Lau Chun Hong_18118012_assignsubmission_file	Chun Hong	Lau	3036264860		
+Li Baipeng_18117996_assignsubmission_file	Baipeng	Li	3036380781		
+Li Chun Hong_18118057_assignsubmission_file	Chun Hong	Li	3036384036		
+Li Haitao_18118002_assignsubmission_file	Haitao	Li	3036380042		
+Li Jiatong_18118058_assignsubmission_file	Jiatong	Li	3036380030		
+Li Nian_18118009_assignsubmission_file	Nian	Li	3036382088		
+Li Ruhao_18118046_assignsubmission_file	Ruhao	Li	3036380145		
+Li Weiqi_18118019_assignsubmission_file	Weiqi	Li	3036409733		
+Li Yuhan_18118038_assignsubmission_file	Yuhan	Li	3036381876		
+Li Zihan_18118011_assignsubmission_file	Zihan	Li	3036380729		
+Li Ziyang_18118010_assignsubmission_file	Ziyang	Li	3036382870		
+Liu Baichen_18118054_assignsubmission_file	Baichen	Liu	3036382571		
+Liu Dahai_18117979_assignsubmission_file	Dahai	Liu	3036383044		
+Liu Jingwen_18117967_assignsubmission_file	Jingwen	Liu	3036381199		
+Liu Jingyuan_18118021_assignsubmission_file	Jingyuan	Liu	3036382519		
+Liu Kai_18118091_assignsubmission_file	Kai	Liu	3036380705		
+Liu Kexin_18117968_assignsubmission_file	Kexin	Liu	3036380133		
+	Ruqian	Liu	3036382208		
+Liu Xiaorui_18118003_assignsubmission_file	Xiaorui	Liu	3036380121		
+Liu Zicheng_18118014_assignsubmission_file	Zicheng	Liu	3036381931		
+Long Xiyu_18118029_assignsubmission_file	Xiyu	Long	3036382595		
+Lu Xiulin_18118065_assignsubmission_file	Xiulin	Lu	3036382351		
+Luo Jiyang_18117986_assignsubmission_file	Jiyang	Luo	3036382430		
+Luo Yawen_18118083_assignsubmission_file	Yawen	Luo	3036380080		
+	Yingpei	Ma	3036215170		
+Mao Yu_18118005_assignsubmission_file	Yu	Mao	3036381993		
+Meng Tan_18118048_assignsubmission_file	Tan	Meng	3036197859		
+Miao Ziheng_18118066_assignsubmission_file	Ziheng	Miao	3036413409		
+Na Siyuan_18118020_assignsubmission_file	Siyuan	Na	3036413136		
+Ng Wing Sze_18118039_assignsubmission_file	Wing Sze	Ng	3036384361		
+AtYuan Ge_assign	None	None	145	test	100
+Ou Junliang_18118024_assignsubmission_file	Junliang	Ou	3036382155		
+Peng Dongzhi_18117984_assignsubmission_file	Dongzhi	Peng	3036381266		
+Peng Jiarui_18118099_assignsubmission_file	Jiarui	Peng	3036381084		
+Peng Shuo_18118098_assignsubmission_file	Shuo	Peng	3036413253		
+Qiao Tianxiao_18118095_assignsubmission_file	Tianxiao	Qiao	3036382179		
+Ran Shuxue_18118059_assignsubmission_file	Shuxue	Ran	3036381802		
+Shang Xinyi_18118061_assignsubmission_file	Xinyi	Shang	3036382296		
+Shao Jianfeng_18117987_assignsubmission_file	Jianfeng	Shao	3036382868		
+Shi Xueyao_18118013_assignsubmission_file	Xueyao	Shi	3036380779		
+Song Jiahang_18118079_assignsubmission_file	Jiahang	Song	3036380482		
+Sun Wenhe_18118032_assignsubmission_file	Wenhe	Sun	3036411229		
+Tan Junzhe_18118076_assignsubmission_file	Junzhe	Tan	3036382612		
+Tong Yan_18118052_assignsubmission_file	Yan	Tong	3036410627		
+Tong Yaxin_18118078_assignsubmission_file	Yaxin	Tong	3036380937		
+WONG Chiu Ching Kenneth_18118074_assignsubmission_file	Chiu Ching Kenneth	WONG	3035188186		
+Wang Anji_18118031_assignsubmission_file	Anji	Wang	3036380767		
+Wang Jingyi_18118042_assignsubmission_file	Jingyi	Wang	3036379990		
+Wang Kai_18117964_assignsubmission_file	Kai	Wang	3036411657		
+Wang Mengqi_18118035_assignsubmission_file	Mengqi	Wang	3036410598		
+Wang Rundong_18118092_assignsubmission_file	Rundong	Wang	3036381541		
+Wang Shiwei_18118084_assignsubmission_file	Shiwei	Wang	3036410392		
+Wang Tianyang_18118085_assignsubmission_file	Tianyang	Wang	3036410249		
+Wang Weitong_18117978_assignsubmission_file	Weitong	Wang	3036381204		
+Wang Xinyu_18118055_assignsubmission_file	Xinyu	Wang	3036410964		
+Wang Yike_18118105_assignsubmission_file	Yike	Wang	3036411279		
+Wang Yirong_18118033_assignsubmission_file	Yirong	Wang	3036409068		
+Wang Yucheng_18117982_assignsubmission_file	Yucheng	Wang	3036380509		
+Wang Zeying_18118036_assignsubmission_file	Zeying	Wang	3036380212		
+Wang Zimo_18118050_assignsubmission_file	Zimo	Wang	3036381151		
+Wong Tak Hei_18118001_assignsubmission_file	Tak Hei	Wong	3036196922		
+Wong Wai Wing_18118072_assignsubmission_file	Wai Wing	Wong	3036383513		
+Wu Jiaman_18117972_assignsubmission_file	Jiaman	Wu	3036381321		
+Wu Keyi_18117971_assignsubmission_file	Keyi	Wu	3036411097		
+Wu Tianyu_18117963_assignsubmission_file	Tianyu	Wu	3036410768		
+Wu Yihao_18117995_assignsubmission_file	Yihao	Wu	3036215352		
+Wu Yujia_18117983_assignsubmission_file	Yujia	Wu	3036411047		
+Xia Rui_18118034_assignsubmission_file	Rui	Xia	3036216069		
+Xia Yuquan_18118045_assignsubmission_file	Yuquan	Xia	3036380470		
+Xin Zongrui_18118096_assignsubmission_file	Zongrui	Xin	3036410548		
+Xiu Jian_18118027_assignsubmission_file	Jian	Xiu	3036380640		
+Xu Hanlin_18118008_assignsubmission_file	Hanlin	Xu	3036410665		
+Xu Haoqin_18118100_assignsubmission_file	Haoqin	Xu	3036410407		
+Xu Yue_18118101_assignsubmission_file	Yue	Xu	3036410770		
+Xu Zhicheng_18118077_assignsubmission_file	Zhicheng	Xu	3036213108		
+Xu Ziheng_18117993_assignsubmission_file	Ziheng	Xu	3036409757		
+Yang Bochuang_18118103_assignsubmission_file	Bochuang	Yang	3036382143		
+Yang Jiahao_18118075_assignsubmission_file	Jiahao	Yang	3036410457		
+Yang Tonglin_18118106_assignsubmission_file	Tonglin	Yang	3036381694		
+Yang Yuchan_18118017_assignsubmission_file	Yuchan	Yang	3036382507		
+Yang Yuhang_18118087_assignsubmission_file	Yuhang	Yang	3036380169		
+Yang Zhuang_18118073_assignsubmission_file	Zhuang	Yang	3036408961		
+Ye Meng_18118060_assignsubmission_file	Meng	Ye	3036410469		
+Yu Sicong_18118007_assignsubmission_file	Sicong	Yu	3036410615		
+Yu Weijia_18118040_assignsubmission_file	Weijia	Yu	3036380547		
+Yu Yihua_18117970_assignsubmission_file	Yihua	Yu	3036382674		
+Yu Yongheng_18118097_assignsubmission_file	Yongheng	Yu	3036198516		
+Yuan Zhishun_18117974_assignsubmission_file	Zhishun	Yuan	3036410495		
+Zeng Minhang_18117989_assignsubmission_file	Minhang	Zeng	3036380872		
+Zeng Zhongze_18118023_assignsubmission_file	Zhongze	Zeng	3036413564		
+Zhang Hongyi_18117985_assignsubmission_file	Hongyi	Zhang	3036408959		
+Zhang Qian_18118102_assignsubmission_file	Qian	Zhang	3036410902		
+Zhang Shenghao_18118015_assignsubmission_file	Shenghao	Zhang	3036410990		
+Zhang Xinyuan_18118068_assignsubmission_file	Xinyuan	Zhang	3036411061		
+Zhang Yanfeng_18118063_assignsubmission_file	Yanfeng	Zhang	3036411839		
+Zhang Yanlin_18118047_assignsubmission_file	Yanlin	Zhang	3036381644		
+Zhang Yifei_18118069_assignsubmission_file	Yifei	Zhang	3036411683		
+Zhang Yudong_18118018_assignsubmission_file	Yudong	Zhang	3036380561		
+Zhang Yue_18118016_assignsubmission_file	Yue	Zhang	3036380884		
+Zhang Yuxin_18118064_assignsubmission_file	Yuxin	Zhang	3036212556		
+Zhao Yili_18117966_assignsubmission_file	Yili	Zhao	3036381955		
+Zheng Jiayi_18118089_assignsubmission_file	Jiayi	Zheng	3036380949		
+Zheng Yatian_18117990_assignsubmission_file	Yatian	Zheng	3036410380		
+Zhou Zhuyan_18118093_assignsubmission_file	Zhuyan	Zhou	3036408870		
+Zhu Yihan_18118041_assignsubmission_file	Yihan	Zhu	3036382167		
+Zhu Yuan_18118004_assignsubmission_file	Yuan	Zhu	3036380731		
+Zou Yingtong_18118030_assignsubmission_file	Yingtong	Zou	3036382480		

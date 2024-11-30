@@ -19,7 +19,13 @@ def get_meta(root):
             'resubmit': f'{root}/a2/resubmit_after_ddl/',
             'base': f'{root}/a2/base/',
             'checked': f'{root}/a2/checked/'
-        }
+        },
+        'a3': {
+            'submissions': f'{root}/a3/submissions/',
+            'resubmit': f'{root}/a3/resubmit_after_ddl/',
+            'base': f'{root}/a3/base/',
+            'checked': f'{root}/a3/checked/'
+        },
     }
     return meta_info
 
